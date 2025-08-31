@@ -6,6 +6,7 @@
     "dev": "next dev",
     "build": "next build",
     "start": "next start",
+    "export": "next export",
     "lint": "eslint"
   },
   "dependencies": {
@@ -20,5 +21,7 @@
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
     "tailwindcss": "^4"
-  }
+  },
+  "homepage": "https://seu-usuario.github.io/agropecuaria-site"
+
 }

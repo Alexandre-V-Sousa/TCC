@@ -1,6 +1,8 @@
-/** @type {import('next').NextConfig} */
+// next.config.mjs
 const nextConfig = {
-  reactStrictMode: true,
+  output: "export",
+  basePath: "/TCC", // Substitua pelo nome do seu repositório GitHub
 };
 
 export default nextConfig;
+
