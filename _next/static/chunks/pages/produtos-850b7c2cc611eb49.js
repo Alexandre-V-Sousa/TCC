@@ -1,1 +1,0 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[466],{4553:(_,s,u)=>{(window.__NEXT_P=window.__NEXT_P||[]).push(["/produtos",function(){return u(5258)}])},5258:(_,s,u)=>{"use strict";u.r(s),u.d(s,{default:()=>d});var e=u(7876);let d=()=>(0,e.jsx)("div",{children:"Produtos"})}},_=>{_.O(0,[636,593,792],()=>_(_.s=4553)),_N_E=_.O()}]);

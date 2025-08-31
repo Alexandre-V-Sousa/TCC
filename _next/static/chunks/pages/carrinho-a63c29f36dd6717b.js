@@ -1,1 +1,0 @@
-(self.webpackChunk_N_E=self.webpackChunk_N_E||[]).push([[910],{9013:(n,r,_)=>{(window.__NEXT_P=window.__NEXT_P||[]).push(["/carrinho",function(){return _(9902)}])},9902:(n,r,_)=>{"use strict";_.r(r),_.d(r,{default:()=>e});var u=_(7876);function e(){return(0,u.jsx)("div",{children:"Carrinho"})}}},n=>{n.O(0,[636,593,792],()=>n(n.s=9013)),_N_E=n.O()}]);

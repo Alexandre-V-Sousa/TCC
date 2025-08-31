@@ -2,13 +2,13 @@
   "name": "agro-patricia",
   "version": "0.1.0",
   "private": true,
+  "homepage": "https://Alexandre-V-Sousa.github.io/TCC",
   "scripts": {
-    "dev": "next dev",
-    "build": "next build",
-    "start": "next start",
-    "export": "next export",
-    "lint": "eslint"
-  },
+  "dev": "next dev",
+  "build": "next build",
+  "start": "next start"
+},
+
   "dependencies": {
     "lucide-react": "^0.542.0",
     "next": "15.5.2",
@@ -20,8 +20,7 @@
     "@tailwindcss/postcss": "^4",
     "eslint": "^9",
     "eslint-config-next": "15.5.2",
+    "gh-pages": "^5.0.0",
     "tailwindcss": "^4"
-  },
-  "homepage": "https://seu-usuario.github.io/agropecuaria-site"
-
+  }
 }
