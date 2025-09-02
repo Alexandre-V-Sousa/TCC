@@ -20,158 +20,204 @@ import {
 import { motion } from "framer-motion";
 
 export default function Home() {
+  // ---------------- BANNERS ----------------
   const banners = [
     { src: "/banner1.png", alt: "Promoção especial" },
     { src: "/banner2.png", alt: "Novidades na loja" },
+    { src: "/banner3.png", alt: "Frete grátis acima de R$100" },
   ];
 
-  const [current, setCurrent] = useState(0);
-  const timerRef = useRef(null);
-  const viewportRef = useRef(null);
-  const slideInnerRefs = useRef([]);
-  const rafRef = useRef(null);
-  const targetRef = useRef({ x: 0, y: 0 });
-  const currentPosRef = useRef({ x: 0, y: 0 });
-  const touchStartX = useRef(null);
+  const [currentBanner, setCurrentBanner] = useState(0);
+  const bannerIntervalRef = useRef(null);
 
-  // --- Carrossel Banner ---
+  const goNextBanner = () =>
+    setCurrentBanner((prev) => (prev + 1) % banners.length);
+  const goPrevBanner = () =>
+    setCurrentBanner((prev) => (prev - 1 + banners.length) % banners.length);
+
+  const startBannerAutoplay = () => {
+    stopBannerAutoplay();
+    bannerIntervalRef.current = setInterval(goNextBanner, 4000);
+  };
+  const stopBannerAutoplay = () => {
+    if (bannerIntervalRef.current) clearInterval(bannerIntervalRef.current);
+  };
+
   useEffect(() => {
-    startAutoplay();
-    return () => {
-      stopAutoplay();
-      cancelRaf();
-    };
-  }, [banners.length]);
+    startBannerAutoplay();
+    return () => stopBannerAutoplay();
+  }, []);
 
-  const startAutoplay = () => {
-    stopAutoplay();
-    timerRef.current = setInterval(() => {
-      setCurrent((p) => (p + 1) % banners.length);
-    }, 4000);
-  };
-  const stopAutoplay = () => {
-    if (timerRef.current) {
-      clearInterval(timerRef.current);
-      timerRef.current = null;
-    }
-  };
-  const cancelRaf = () => {
-    if (rafRef.current) {
-      cancelAnimationFrame(rafRef.current);
-      rafRef.current = null;
-    }
-  };
-  const runRaf = () => {
-    if (!rafRef.current) rafRef.current = requestAnimationFrame(step);
-  };
-  const step = () => {
-    const k = 0.12;
-    currentPosRef.current.x += (targetRef.current.x - currentPosRef.current.x) * k;
-    currentPosRef.current.y += (targetRef.current.y - currentPosRef.current.y) * k;
-
-    const el = slideInnerRefs.current[current];
-    if (el) el.style.transform = `translate3d(${currentPosRef.current.x}px, ${currentPosRef.current.y}px, 0) scale(1.03)`;
-
-    const dx = Math.abs(targetRef.current.x - currentPosRef.current.x);
-    const dy = Math.abs(targetRef.current.y - currentPosRef.current.y);
-    if (dx > 0.1 || dy > 0.1) rafRef.current = requestAnimationFrame(step);
-    else rafRef.current = null;
-  };
-  const handleMouseMove = (e) => {
-    const vp = viewportRef.current;
-    if (!vp) return;
-    const rect = vp.getBoundingClientRect();
-    const relX = (e.clientX - rect.left) / rect.width - 0.5;
-    const relY = (e.clientY - rect.top) / rect.height - 0.5;
-    const maxX = Math.min(50, rect.width * 0.05);
-    const maxY = Math.min(25, rect.height * 0.03);
-    targetRef.current.x = relX * maxX;
-    targetRef.current.y = relY * maxY;
-    runRaf();
-  };
-  const handleMouseLeave = () => {
-    targetRef.current.x = 0;
-    targetRef.current.y = 0;
-    runRaf();
-  };
-  const handleTouchStart = (e) => {
-    touchStartX.current = e.touches[0].clientX;
-  };
-  const handleTouchEnd = (e) => {
-    if (touchStartX.current === null) return;
-    const diff = touchStartX.current - e.changedTouches[0].clientX;
-    if (diff > 50) goNext();
-    else if (diff < -50) goPrev();
-    touchStartX.current = null;
-  };
-  const goNext = () => {
-    setCurrent((p) => (p + 1) % banners.length);
-    resetParallax();
-    restartAutoplay();
-  };
-  const goPrev = () => {
-    setCurrent((p) => (p - 1 + banners.length) % banners.length);
-    resetParallax();
-    restartAutoplay();
-  };
-  const resetParallax = () => {
-    slideInnerRefs.current.forEach((el) => el && (el.style.transform = "translate3d(0,0,0) scale(1)"));
-    targetRef.current = { x: 0, y: 0 };
-    currentPosRef.current = { x: 0, y: 0 };
-    cancelRaf();
-  };
-  const restartAutoplay = () => {
-    stopAutoplay();
-    startAutoplay();
-  };
-  useEffect(() => {
-    slideInnerRefs.current.forEach((el, idx) => {
-      if (!el) return;
-      el.style.transition = idx === current ? "transform 350ms ease" : "none";
-      el.style.transform = "translate3d(0,0,0) scale(1)";
-    });
-    const t = setTimeout(() => {
-      slideInnerRefs.current.forEach((el) => el && (el.style.transition = ""));
-    }, 350);
-    return () => clearTimeout(t);
-  }, [current]);
-
-  // --- Produtos ---
+  // ---------------- PRODUTOS ----------------
   const dogProducts = [
-    { name: "Ração", img: "/RaçãoCachorro.jpg" },
-    { name: "Petisco", img: "/PetiscoCachorro.jpg" },
-    { name: "Osso", img: "/OssoCachorro.jpg" },
-    { name: "Higiene", img: "/HigieneCachorro.jpg" },
-    { name: "Coleiras", img: "/ColeirasCachorro.jpg" },
-    { name: "Brinquedos", img: "/BrinquedosCachorro.jpg" },
+    { name: "Ração", img: "/cachorro/RaçãoCachorro.jpg" },
+    { name: "Petiscos e Ossos", img: "/cachorro/PetiscoCachorro.jpg" },
+    { name: "Higiene", img: "/cachorro/HigieneCachorro.jpg" },
+    { name: "Coleiras", img: "/cachorro/ColeirasCachorro.jpg" },
+    { name: "Brinquedos", img: "/cachorro/BrinquedosCachorro.jpg" },
   ];
   const catProducts = [
-    { name: "Ração", img: "/produtos/gato/racao.jpg" },
-    { name: "Petisco", img: "/produtos/gato/petisco.jpg" },
-    { name: "Arranhador", img: "/produtos/gato/arranhador.jpg" },
-    { name: "Higiene", img: "/produtos/gato/higiene.jpg" },
-    { name: "Brinquedos", img: "/produtos/gato/brinquedos.jpg" },
+    { name: "Ração", img: "/gato/RaçãoGato.jpg" },
+    { name: "Petiscos", img: "/gato/PetiscosGato.jpg" },
+    { name: "Arranhadores", img: "/gato/ArranhadoresGato.jpg" },
+    { name: "Higiene", img: "/gato/HigieneGato.jpg" },
+    { name: "Brinquedos", img: "/gato/BrinquedosGato.jpg" },
   ];
 
-  // --- Scroll refs ---
   const scrollRefDog = useRef(null);
   const scrollRefCat = useRef(null);
-  const scrollLeft = (ref) => ref.current?.scrollBy({ left: -320, behavior: "smooth" });
-  const scrollRight = (ref) => ref.current?.scrollBy({ left: 320, behavior: "smooth" });
+  const scrollLeft = (ref) =>
+    ref.current?.scrollBy({ left: -320, behavior: "smooth" });
+  const scrollRight = (ref) =>
+    ref.current?.scrollBy({ left: 320, behavior: "smooth" });
 
+  // ---------------- DROPDOWNS ----------------
+  const [openDropdown, setOpenDropdown] = useState(null); // "produtos" | "servicos" | null
+
+  // ---------------- RETORNO ----------------
   return (
     <main className="bg-[#ECFFEB]">
       {/* Navbar */}
-      <nav className="bg-[#ECFFEB] shadow">
+      <nav className="bg-[#ECFFEB] shadow relative z-50">
         <div className="max-w-6xl mx-auto px-4 py-3 flex flex-col md:flex-row items-center justify-between gap-4 md:gap-0">
           <div className="flex items-center space-x-4 md:space-x-6">
-            <Image src="/logo.png" alt="Logo" width={80} height={80} className="rounded-full" />
+            <Image
+              src="/logo.png"
+              alt="Logo"
+              width={80}
+              height={80}
+              className="rounded-full"
+            />
+
+            {/* MENU PRINCIPAL */}
             <ul className="flex flex-col md:flex-row space-y-2 md:space-y-0 md:space-x-5 text-black">
-              <li><Link href="/">Início</Link></li>
-              <li><Link href="/produtos">Produtos</Link></li>
-              <li><Link href="/animais">Animais</Link></li>
+              {/* Início */}
+              <li>
+                <Link href="/" className="hover:text-green-700 font-medium">
+                  Início
+                </Link>
+              </li>
+
+              {/* Produtos (Dropdown) */}
+              <li
+                className="relative"
+                onMouseEnter={() => setOpenDropdown("produtos")}
+                onMouseLeave={() => setOpenDropdown(null)}
+              >
+                <Link href="/produtos" className="hover:text-green-700 font-medium">
+                  Produtos
+                </Link>
+
+                {openDropdown === "produtos" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="absolute left-0 top-8 bg-white shadow-xl rounded-xl py-2 w-56"
+                    onMouseEnter={() => setOpenDropdown("produtos")}
+                    onMouseLeave={() => setOpenDropdown(null)}
+                  >
+                    <Link
+                      href="/caes"
+                      className="block px-4 py-2 hover:bg-green-100 text-gray-700"
+                    >
+                      Cães
+                    </Link>
+                    <Link
+                      href="/gatos"
+                      className="block px-4 py-2 hover:bg-green-100 text-gray-700"
+                    >
+                      Gatos
+                    </Link>
+                    <Link
+                      href="/peixes"
+                      className="block px-4 py-2 hover:bg-green-100 text-gray-700"
+                    >
+                      Peixes
+                    </Link>
+                    <Link
+                      href="/casa-e-jardim"
+                      className="block px-4 py-2 hover:bg-green-100 text-gray-700"
+                    >
+                      Casa & Jardim
+                    </Link>
+                    <Link
+                      href="/promocoes"
+                      className="block px-4 py-2 hover:bg-green-100 text-gray-700"
+                    >
+                      Promoções
+                    </Link>
+                  </motion.div>
+                )}
+              </li>
+
+              {/* Serviços (Dropdown) */}
+              <li
+                className="relative"
+                onMouseEnter={() => setOpenDropdown("servicos")}
+                onMouseLeave={() => setOpenDropdown(null)}
+              >
+                <button
+                  type="button"
+                  className="hover:text-green-700 font-medium"
+                >
+                  Serviços
+                </button>
+
+                {openDropdown === "servicos" && (
+                  <motion.div
+                    initial={{ opacity: 0, y: -6 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    exit={{ opacity: 0, y: -6 }}
+                    className="absolute left-0 top-8 bg-white shadow-xl rounded-xl py-2 w-56"
+                    onMouseEnter={() => setOpenDropdown("servicos")}
+                    onMouseLeave={() => setOpenDropdown(null)}
+                  >
+                    <Link
+                      href="/banho-e-tosa"
+                      className="block px-4 py-2 hover:bg-green-100 text-gray-700"
+                    >
+                      Banho e Tosa
+                    </Link>
+                    <Link
+                      href="/consultas"
+                      className="block px-4 py-2 hover:bg-green-100 text-gray-700"
+                    >
+                      Consultas
+                    </Link>
+                    <Link
+                      href="/vacinacao"
+                      className="block px-4 py-2 hover:bg-green-100 text-gray-700"
+                    >
+                      Vacinação
+                    </Link>
+                    <Link
+                      href="/adestramento"
+                      className="block px-4 py-2 hover:bg-green-100 text-gray-700"
+                    >
+                      Adestramento
+                    </Link>
+                  </motion.div>
+                )}
+              </li>
+
+              {/* Blog / Dicas */}
+              <li>
+                <Link href="/blog" className="hover:text-green-700 font-medium">
+                  Blog / Dicas
+                </Link>
+              </li>
+
+              {/* Meus Pets (link de menu) */}
+              <li>
+                <Link href="/animais" className="hover:text-green-700 font-medium">
+                  Meus Pets
+                </Link>
+              </li>
             </ul>
           </div>
+
+          {/* BUSCA */}
           <div className="w-full md:w-auto text-center md:text-left relative">
             <input
               type="text"
@@ -180,19 +226,61 @@ export default function Home() {
             />
             <svg
               xmlns="http://www.w3.org/2000/svg"
-              className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400 "
+              className="absolute left-4 top-1/2 -translate-y-1/2 h-6 w-6 text-gray-400"
               fill="none"
               viewBox="0 0 24 24"
               stroke="currentColor"
               strokeWidth={2}
             >
-              <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-4.35-4.35M5 11a6 6 0 1112 0 6 6 0 01-12 0z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M21 21l-4.35-4.35M5 11a6 6 0 1112 0 6 6 0 01-12 0z"
+              />
             </svg>
           </div>
-          <div className="flex items-center space-x-4 text-black">
-            <Link href="/login"><User size={28} /></Link>
-            <Link href="/carrinho"><ShoppingCart size={28} /></Link>
-            <Link href="/contato"><Mail size={28} /></Link>
+
+          {/* ÍCONES ANIMADOS À DIREITA */}
+          <div className="flex items-center space-x-6 text-black">
+            {/* Meus Pets */}
+            <Link href="/animais" className="relative group flex items-center cursor-pointer">
+              <div className="bg-white p-2 rounded-full shadow-md transition-transform duration-300 group-hover:scale-110">
+                <Dog className="text-black w-6 h-6" />
+              </div>
+              <span className="absolute left-1/2 -translate-x-1/2 mt-12 px-3 py-1 bg-black text-white text-sm rounded-md opacity-0 group-hover:opacity-100 group-hover:translate-y-1 transition-all duration-300">
+                Meus Pets
+              </span>
+            </Link>
+
+            {/* Login */}
+            <Link href="/login" className="relative group flex items-center cursor-pointer">
+              <div className="bg-white p-2 rounded-full shadow-md transition-transform duration-300 group-hover:scale-110">
+                <User className="text-black w-6 h-6" />
+              </div>
+              <span className="absolute left-1/2 -translate-x-1/2 mt-12 px-3 py-1 bg-black text-white text-sm rounded-md opacity-0 group-hover:opacity-100 group-hover:translate-y-1 transition-all duration-300">
+                Login
+              </span>
+            </Link>
+
+            {/* Carrinho */}
+            <Link href="/carrinho" className="relative group flex items-center cursor-pointer">
+              <div className="bg-white p-2 rounded-full shadow-md transition-transform duration-300 group-hover:scale-110">
+                <ShoppingCart className="text-black w-6 h-6" />
+              </div>
+              <span className="absolute left-1/2 -translate-x-1/2 mt-12 px-3 py-1 bg-black text-white text-sm rounded-md opacity-0 group-hover:opacity-100 group-hover:translate-y-1 transition-all duration-300">
+                Carrinho
+              </span>
+            </Link>
+
+            {/* Contato */}
+            <Link href="/contato" className="relative group flex items-center cursor-pointer">
+              <div className="bg-white p-2 rounded-full shadow-md transition-transform duration-300 group-hover:scale-110">
+                <Mail className="text-black w-6 h-6" />
+              </div>
+              <span className="absolute left-1/2 -translate-x-1/2 mt-12 px-3 py-1 bg-black text-white text-sm rounded-md opacity-0 group-hover:opacity-100 group-hover:translate-y-1 transition-all duration-300">
+                Contato
+              </span>
+            </Link>
           </div>
         </div>
       </nav>
@@ -213,80 +301,194 @@ export default function Home() {
         </div>
         <div className="flex items-center gap-3 bg-white shadow-lg rounded-2xl px-6 py-4 hover:shadow-2xl transition w-full md:w-auto">
           <CreditCard className="text-green-700" size={28} />
-          <span className="text-gray-700 font-semibold">Formas de Pagamento</span>
+          <span className="text-gray-700 font-semibold">
+            Formas de Pagamento
+          </span>
         </div>
       </section>
 
       {/* Carrossel Principal */}
-      <section className="relative mt-6 w-full">
+      <section className="relative mt-6 w-full flex justify-center">
         <div
-          ref={viewportRef}
-          className="relative overflow-hidden group h-56 sm:h-72 md:h-[400px] lg:h-[500px] w-full"
-          onMouseEnter={stopAutoplay}
-          onMouseLeave={() => { startAutoplay(); handleMouseLeave(); }}
-          onMouseMove={handleMouseMove}
-          onTouchStart={handleTouchStart}
-          onTouchEnd={handleTouchEnd}
+          className="relative overflow-hidden h-56 sm:h-72 md:h-[300px] lg:h-[400px] w-[90%] rounded-2xl shadow-lg"
+          onMouseEnter={stopBannerAutoplay}
+          onMouseLeave={startBannerAutoplay}
         >
-          {banners.map((b, i) => (
+          {banners.map((banner, index) => (
             <div
-              key={i}
-              className={`absolute inset-0 transition-opacity duration-700 ease-in-out ${i === current ? "opacity-100 z-10" : "opacity-0 z-0 pointer-events-none"}`}
+              key={index}
+              className="absolute top-0 left-0 w-full h-full transition-transform duration-700 ease-in-out"
+              style={{
+                transform: `translateX(${(index - currentBanner) * 100}%)`,
+              }}
             >
-              <div ref={(el) => (slideInnerRefs.current[i] = el)} className="absolute inset-0 will-change-transform">
-                <Image src={b.src} alt={b.alt} fill style={{ objectFit: "cover" }} sizes="100vw" priority={i === 0} />
-              </div>
+              <Image
+                src={banner.src}
+                alt={banner.alt}
+                fill
+                style={{ objectFit: "cover", borderRadius: "1rem" }}
+                priority={index === 0}
+              />
             </div>
           ))}
-          <button onClick={goPrev} className="absolute left-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-3 rounded-full z-10 hover:bg-black/70 transition">
-            <ChevronLeft size={28} />
+
+          {/* Botões do carrossel */}
+          <button
+            onClick={goPrevBanner}
+            className="absolute left-4 top-1/2 -translate-y-1/2 bg-white text-black shadow-md p-3 rounded-full z-20 hover:scale-110 transition-transform"
+          >
+            <ChevronLeft size={20} />
           </button>
-          <button onClick={goNext} className="absolute right-4 top-1/2 -translate-y-1/2 bg-black/50 text-white p-3 rounded-full z-10 hover:bg-black/70 transition">
-            <ChevronRight size={28} />
+
+          <button
+            onClick={goNextBanner}
+            className="absolute right-4 top-1/2 -translate-y-1/2 bg-white text-black shadow-md p-3 rounded-full z-20 hover:scale-110 transition-transform"
+          >
+            <ChevronRight size={20} />
           </button>
+
+          {/* Indicadores */}
+          <div className="absolute bottom-4 w-full flex justify-center gap-2">
+            {banners.map((_, index) => (
+              <button
+                key={index}
+                onClick={() => setCurrentBanner(index)}
+                className={`w-3 h-3 rounded-full transition-all duration-300 ${
+                  currentBanner === index
+                    ? "bg-green-700 scale-125"
+                    : "bg-gray-300"
+                }`}
+              />
+            ))}
+          </div>
         </div>
       </section>
 
       {/* Categorias */}
       <section className="py-10 px-4 max-w-6xl mx-auto flex flex-wrap justify-center gap-4">
-        <Link href="/animais/cachorro" className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"><Dog size={24} /> Cachorro</Link>
-        <Link href="/animais/gato" className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"><Cat size={24} /> Gato</Link>
-        <Link href="/animais/peixe" className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"><Fish size={24} /> Peixe</Link>
-        <Link href="/animais/outros" className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"><Box size={24} /> Outros Pets</Link>
-        <Link href="/casa-e-jardim" className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"><HomeIcon size={24} /> Casa & Jardim</Link>
+        <Link
+          href="/animais/cachorro"
+          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
+        >
+          <Dog size={24} /> Cães
+        </Link>
+        <Link
+          href="/animais/gato"
+          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
+        >
+          <Cat size={24} /> Gatos
+        </Link>
+        <Link
+          href="/animais/peixe"
+          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
+        >
+          <Fish size={24} /> Peixes
+        </Link>
+        <Link
+          href="/animais/outros"
+          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
+        >
+          <Box size={24} /> Outros Pets
+        </Link>
+        <Link
+          href="/casa-e-jardim"
+          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
+        >
+          <HomeIcon size={24} /> Casa & Jardim
+        </Link>
       </section>
 
       {/* Carrossel Cachorro */}
       <section className="py-10 max-w-6xl mx-auto">
-        <h2 className="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Produtos para Cachorro </h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-green-800 mb-6">
+          Produtos para Cães
+        </h2>
         <div className="relative">
-          <button onClick={() => scrollLeft(scrollRefDog)} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition"><ChevronLeft size={28} /></button>
-          <div ref={scrollRefDog} className="flex overflow-x-auto gap-4 scrollbar-hide scroll-smooth">
+          <button
+            onClick={() => scrollLeft(scrollRefDog)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition"
+          >
+            <ChevronLeft size={28} />
+          </button>
+          <div
+            ref={scrollRefDog}
+            className="flex overflow-x-auto gap-4 scrollbar-hide scroll-smooth"
+          >
             {dogProducts.map((p, i) => (
-              <motion.div key={i} className="min-w-[220px] bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center hover:scale-105 transition-transform" whileHover={{ scale: 1.08 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: i * 0.1 }}>
-                <Image src={p.img} alt={p.name} width={200} height={140} className="rounded-lg" />
-                <span className="mt-2 font-semibold text-green-700">{p.name}</span>
+              <motion.div
+                key={i}
+                className="min-w-[220px] bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center hover:scale-105 transition-transform"
+                whileHover={{ scale: 1.08 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+              >
+                <Image
+                  src={p.img}
+                  alt={p.name}
+                  width={200}
+                  height={140}
+                  className="rounded-lg"
+                />
+                <span className="mt-2 font-semibold text-green-700">
+                  {p.name}
+                </span>
               </motion.div>
             ))}
           </div>
-          <button onClick={() => scrollRight(scrollRefDog)} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition"><ChevronRight size={28} /></button>
+          <button
+            onClick={() => scrollRight(scrollRefDog)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition"
+          >
+            <ChevronRight size={28} />
+          </button>
         </div>
       </section>
 
       {/* Carrossel Gato */}
       <section className="py-10 max-w-6xl mx-auto">
-        <h2 className="text-2xl sm:text-3xl font-bold text-green-800 mb-6">Produtos para Gato </h2>
+        <h2 className="text-2xl sm:text-3xl font-bold text-green-800 mb-6">
+          Produtos para Gatos
+        </h2>
         <div className="relative">
-          <button onClick={() => scrollLeft(scrollRefCat)} className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition"><ChevronLeft size={28} /></button>
-          <div ref={scrollRefCat} className="flex overflow-x-auto gap-4 scrollbar-hide scroll-smooth">
+          <button
+            onClick={() => scrollLeft(scrollRefCat)}
+            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition"
+          >
+            <ChevronLeft size={28} />
+          </button>
+          <div
+            ref={scrollRefCat}
+            className="flex overflow-x-auto gap-4 scrollbar-hide scroll-smooth"
+          >
             {catProducts.map((p, i) => (
-              <motion.div key={i} className="min-w-[220px] bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center hover:scale-105 transition-transform" whileHover={{ scale: 1.08 }} initial={{ opacity: 0, y: 20 }} animate={{ opacity: 1, y: 0 }} transition={{ duration: 0.5, delay: i * 0.1 }}>
-                <Image src={p.img} alt={p.name} width={200} height={140} className="rounded-lg" />
-                <span className="mt-2 font-semibold text-green-700">{p.name}</span>
+              <motion.div
+                key={i}
+                className="min-w-[220px] bg-white rounded-2xl shadow-lg p-4 flex flex-col items-center hover:scale-105 transition-transform"
+                whileHover={{ scale: 1.08 }}
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5, delay: i * 0.1 }}
+              >
+                <Image
+                  src={p.img}
+                  alt={p.name}
+                  width={200}
+                  height={140}
+                  className="rounded-lg"
+                />
+                <span className="mt-2 font-semibold text-green-700">
+                  {p.name}
+                </span>
               </motion.div>
             ))}
           </div>
-          <button onClick={() => scrollRight(scrollRefCat)} className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition"><ChevronRight size={28} /></button>
+          <button
+            onClick={() => scrollRight(scrollRefCat)}
+            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-black/50 text-white p-3 rounded-full hover:bg-black/70 transition"
+          >
+            <ChevronRight size={28} />
+          </button>
         </div>
       </section>
     </main>
