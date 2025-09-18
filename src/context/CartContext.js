@@ -1,64 +1,83 @@
-// context/CartContext.js
-import { createContext, useContext, useEffect, useState } from "react";
+"use client";
+import { createContext, useContext, useState, useEffect } from "react";
 
 const CartContext = createContext();
 
-export function useCart() {
-  return useContext(CartContext);
-}
-
 export function CartProvider({ children }) {
-  const [items, setItems] = useState([]);
+  const [cartItems, setCartItems] = useState([]);
+  const [isSidebarOpen, setSidebarOpen] = useState(false);
 
-  // carregar do localStorage
+  // Carrega do localStorage quando o app inicia
   useEffect(() => {
-    try {
-      const raw = localStorage.getItem("cart:v1");
-      if (raw) setItems(JSON.parse(raw));
-    } catch (e) {
-      console.warn("Erro ao ler cart do localStorage", e);
+    const saved = localStorage.getItem("cartItems");
+    if (saved) {
+      setCartItems(JSON.parse(saved));
     }
   }, []);
 
-  // persistir no localStorage
+  // Salva no localStorage sempre que o carrinho muda
   useEffect(() => {
-    try {
-      localStorage.setItem("cart:v1", JSON.stringify(items));
-    } catch (e) {
-      console.warn("Erro ao salvar cart no localStorage", e);
-    }
-  }, [items]);
+    localStorage.setItem("cartItems", JSON.stringify(cartItems));
+  }, [cartItems]);
 
-  const addItem = (product, qty = 1) => {
-    setItems((prev) => {
-      const exists = prev.find((p) => p.id === product.id);
-      if (exists) {
-        return prev.map((p) =>
-          p.id === product.id ? { ...p, quantity: p.quantity + qty } : p
+  const addToCart = (product) => {
+    setCartItems((prev) => {
+      const existing = prev.find((item) => item.id === product.id);
+      if (existing) {
+        return prev.map((item) =>
+          item.id === product.id
+            ? { ...item, quantity: item.quantity + 1 }
+            : item
         );
       }
-      return [...prev, { ...product, quantity: qty }];
+      return [...prev, { ...product, quantity: 1 }];
     });
+    setSidebarOpen(true); // abre a barra lateral quando adiciona
+  };
+
+  const removeItem = (id) => {
+    setCartItems((prev) => prev.filter((item) => item.id !== id));
+  };
+
+  const clearCart = () => {
+    setCartItems([]);
   };
 
   const updateQuantity = (id, quantity) => {
-    setItems((prev) =>
-      prev
-        .map((p) => (p.id === id ? { ...p, quantity: Math.max(1, quantity) } : p))
-        .filter(Boolean)
+    if (quantity <= 0) {
+      removeItem(id);
+      return;
+    }
+    setCartItems((prev) =>
+      prev.map((item) =>
+        item.id === id ? { ...item, quantity } : item
+      )
     );
   };
 
-  const removeItem = (id) => setItems((prev) => prev.filter((p) => p.id !== id));
-  const clear = () => setItems([]);
-
-  const subtotal = items.reduce((acc, i) => acc + i.price * i.quantity, 0);
+  const subtotal = cartItems.reduce(
+    (acc, item) => acc + item.preco * item.quantity,
+    0
+  );
 
   return (
     <CartContext.Provider
-      value={{ items, addItem, updateQuantity, removeItem, clear, subtotal }}
+      value={{
+        cartItems,
+        addToCart,
+        removeItem,
+        clearCart,
+        updateQuantity,
+        subtotal,
+        isSidebarOpen,
+        setSidebarOpen,
+      }}
     >
       {children}
     </CartContext.Provider>
   );
+}
+
+export function useCart() {
+  return useContext(CartContext);
 }
