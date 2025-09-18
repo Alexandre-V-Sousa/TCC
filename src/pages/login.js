@@ -3,6 +3,7 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Login() {
   const router = useRouter();
@@ -10,13 +11,25 @@ export default function Login() {
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
 
-  const handleLogin = () => {
+  const handleLogin = async () => {
     if (!email || !password) {
       setError("Preencha todos os campos!");
       return;
     }
-    setError("");
-    alert(`Logado com sucesso!\nEmail: ${email}`);
+
+    const { data: usuario, error: loginError } = await supabase
+      .from("usuarios")
+      .select("*")
+      .eq("email", email)
+      .eq("senha", password)
+      .single();
+
+    if (loginError || !usuario) {
+      setError("Email ou senha incorretos!");
+      return;
+    }
+
+    alert(`Logado com sucesso!\nBem-vindo, ${usuario.nome}`);
     router.push("/"); 
   };
 
@@ -141,7 +154,8 @@ export default function Login() {
             Criar uma conta é rápido, fácil e gratuito!
           </h2>
           <p className="text-gray-700 mb-6">
-            Com a sua conta você terá acesso a ofertas exclusivas, descontos, poderá acompanhar pedidos e muito mais!
+            Com a sua conta você terá acesso a ofertas exclusivas, descontos,
+            poderá acompanhar pedidos e muito mais!
           </p>
           <motion.button
             whileHover={{ scale: 1.05 }}

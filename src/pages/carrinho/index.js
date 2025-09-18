@@ -1,4 +1,3 @@
-// pages/carrinho.js
 "use client";
 import Image from "next/image";
 import Link from "next/link";
@@ -49,7 +48,7 @@ export default function CarrinhoPage() {
       <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
         {/* Conteúdo principal */}
         <section className="lg:col-span-8 bg-white p-6 rounded-2xl shadow-md">
-          <h1 className="text-2xl font-bold mb-4">Sacola</h1>
+          <h1 className="text-2xl font-bold mb-4">Carrinho</h1>
 
           {cartItems.length === 0 ? (
             <div className="py-20 text-center text-gray-500">

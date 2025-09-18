@@ -3,40 +3,81 @@ import { useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Signup() {
   const router = useRouter();
   const [formData, setFormData] = useState({
-    tipo: "fisica",
     nome: "",
-    email: "",
-    celular: "",
-    telefone: "",
-    genero: "",
-    nascimento: "",
     cpf: "",
+    data_nasc: "",
+    telefone: "",
+    logradouro: "",
+    numero: "",
+    bairro: "",
+    email: "",
     senha: "",
     confirmarSenha: "",
   });
 
   const [error, setError] = useState("");
 
-  const handleChange = (e) => {
+  const handleChange = (e) =>
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
 
-  const handleSignup = () => {
-    if (!formData.nome || !formData.email || !formData.celular || !formData.senha || !formData.confirmarSenha) {
+  const handleSignup = async () => {
+    // Validação básica
+    if (
+      !formData.nome ||
+      !formData.cpf ||
+      !formData.data_nasc ||
+      !formData.email ||
+      !formData.senha ||
+      !formData.confirmarSenha
+    ) {
       setError("Preencha todos os campos obrigatórios!");
       return;
     }
+
     if (formData.senha !== formData.confirmarSenha) {
       setError("As senhas não conferem!");
       return;
     }
-    setError("");
-    alert(`Conta criada com sucesso!\nBem-vindo, ${formData.nome}`);
-    router.push("/"); 
+
+    // Verifica se email já existe
+    const { data: existente } = await supabase
+      .from("usuarios")
+      .select("id")
+      .eq("email", formData.email)
+      .single();
+
+    if (existente) {
+      setError("Email já cadastrado!");
+      return;
+    }
+
+    // Inserir novo usuário
+    const { error: insertError } = await supabase.from("usuarios").insert([
+      {
+        nome: formData.nome,
+        cpf: formData.cpf,
+        data_nasc: formData.data_nasc,
+        telefone: formData.telefone,
+        logradouro: formData.logradouro,
+        numero: formData.numero,
+        bairro: formData.bairro,
+        email: formData.email,
+        senha: formData.senha, // ⚠️ Para produção, use hash
+      },
+    ]);
+
+    if (insertError) {
+      setError(insertError.message);
+      return;
+    }
+
+    alert(`Conta criada com sucesso! Bem-vindo, ${formData.nome}`);
+    router.push("/login");
   };
 
   const inputVariant = {
@@ -60,10 +101,10 @@ export default function Signup() {
         initial={{ scale: 0.95, opacity: 0 }}
         animate={{ scale: 1, opacity: 1 }}
         transition={{ duration: 0.5 }}
-        className="bg-white rounded-3xl shadow-2xl flex flex-col md:flex-row w-full max-w-5xl overflow-hidden"
+        className="bg-white rounded-3xl shadow-2xl flex flex-col md:flex-row w-full max-w-5xl overflow-hidden text-black"
       >
-        {/* Lado esquerdo: Formulário de cadastro */}
-        <div className="md:w-2/3 p-10 flex flex-col justify-center">
+        {/* Lado esquerdo: Formulário */}
+        <div className="md:w-2/3 p-10 flex flex-col justify-center text-black">
           <motion.div
             initial={{ scale: 0.8, opacity: 0 }}
             animate={{ scale: 1, opacity: 1 }}
@@ -89,86 +130,46 @@ export default function Signup() {
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
                 transition={{ duration: 0.3 }}
-                className="text-red-500 mb-4 text-center md:text-left text-sm"
+                className="text-red-500 mb-4 text-center md:text-left text-sm text-black"
               >
                 {error}
               </motion.p>
             )}
           </AnimatePresence>
 
-          {/* Pessoa Física / Jurídica */}
-          <motion.div
-            className="flex space-x-6 mb-4"
-            initial={{ x: -30, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.3 }}
-          >
-            <label className="flex items-center space-x-2">
-              <input
-                type="radio"
-                name="tipo"
-                value="fisica"
-                checked={formData.tipo === "fisica"}
-                onChange={handleChange}
-              />
-              <span>Pessoa Física</span>
-            </label>
-            <label className="flex items-center space-x-2">
-              <input
-                type="radio"
-                name="tipo"
-                value="juridica"
-                checked={formData.tipo === "juridica"}
-                onChange={handleChange}
-              />
-              <span>Pessoa Jurídica</span>
-            </label>
-          </motion.div>
-
-          {/* Campos principais */}
           {[
-            { name: "nome", placeholder: "Nome e sobrenome", type: "text" },
-            { name: "email", placeholder: "E-mail", type: "email" },
-            { name: "celular", placeholder: "DDD + Celular", type: "text" },
-            { name: "telefone", placeholder: "DDD + Telefone (opcional)", type: "text" },
-            { name: "genero", placeholder: "Escolha o gênero (opcional)", type: "select", options: ["Masculino","Feminino","Outro"] },
-            { name: "nascimento", placeholder: "Data de nascimento", type: "date" },
+            { name: "nome", placeholder: "Nome completo", type: "text" },
             { name: "cpf", placeholder: "CPF", type: "text" },
+            { name: "data_nasc", placeholder: "Data de nascimento", type: "date" },
+            { name: "telefone", placeholder: "Telefone", type: "text" },
+            { name: "logradouro", placeholder: "Logradouro", type: "text" },
+            { name: "numero", placeholder: "Número", type: "text" },
+            { name: "bairro", placeholder: "Bairro", type: "text" },
+            { name: "email", placeholder: "E-mail", type: "email" },
             { name: "senha", placeholder: "Senha", type: "password" },
-            { name: "confirmarSenha", placeholder: "Confirme a senha", type: "password" },
+            { name: "confirmarSenha", placeholder: "Confirmar senha", type: "password" },
           ].map((field, i) => (
-            <motion.div key={field.name} custom={i + 1} variants={inputVariant} initial="hidden" animate="visible">
-              {field.type === "select" ? (
-                <select
-                  name={field.name}
-                  value={formData[field.name]}
-                  onChange={handleChange}
-                  className="w-full px-5 py-3 rounded-full border border-gray-300 mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
-                >
-                  <option value="">Escolha o gênero (opcional)</option>
-                  {field.options.map(opt => (
-                    <option key={opt} value={opt.toLowerCase()}>{opt}</option>
-                  ))}
-                </select>
-              ) : (
-                <input
-                  type={field.type}
-                  name={field.name}
-                  placeholder={field.placeholder}
-                  value={formData[field.name]}
-                  onChange={handleChange}
-                  className="w-full px-5 py-3 rounded-full border border-gray-300 mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
-                />
-              )}
-            </motion.div>
+            <motion.input
+              key={field.name}
+              type={field.type}
+              name={field.name}
+              placeholder={field.placeholder}
+              value={formData[field.name]}
+              onChange={handleChange}
+              variants={inputVariant}
+              custom={i + 1}
+              initial="hidden"
+              animate="visible"
+              className="w-full px-5 py-3 rounded-full border border-gray-300 mb-4 focus:outline-none focus:ring-2 focus:ring-green-500"
+            />
           ))}
 
           <motion.button
             onClick={handleSignup}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            custom={10}
             variants={inputVariant}
+            custom={11}
             initial="hidden"
             animate="visible"
             className="w-full bg-green-700 hover:bg-green-800 text-white py-3 rounded-full font-bold transition-all shadow-md"
