@@ -1,12 +1,27 @@
-// src/components/Navbar.js
+"use client";
 import Image from "next/image";
 import Link from "next/link";
 import { Dog, User, ShoppingCart, Mail } from "lucide-react";
 import { motion } from "framer-motion";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import produtos from "../../src/data/produtos";
 
 export default function Navbar() {
   const [openDropdown, setOpenDropdown] = useState(null);
+  const [searchTerm, setSearchTerm] = useState("");
+  const [isFocused, setIsFocused] = useState(false); 
+  const [usuario, setUsuario] = useState(null);
+
+  useEffect(() => {
+    const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
+    if (usuarioLogado) {
+      setUsuario(usuarioLogado);
+    }
+  }, []);
+
+  const filteredProdutos = produtos.filter((produto) =>
+    produto.nome.toLowerCase().includes(searchTerm.toLowerCase())
+  );
 
   return (
     <nav className="bg-[#ECFFEB] shadow relative z-50">
@@ -28,8 +43,6 @@ export default function Navbar() {
                 Início
               </Link>
             </li>
-
-            {/* Produtos (Dropdown) */}
             <li
               className="relative"
               onMouseEnter={() => setOpenDropdown("produtos")}
@@ -64,48 +77,11 @@ export default function Navbar() {
                 </motion.div>
               )}
             </li>
-
-            {/* Serviços (Dropdown) */}
-            <li
-              className="relative"
-              onMouseEnter={() => setOpenDropdown("servicos")}
-              onMouseLeave={() => setOpenDropdown(null)}
-            >
-              <button type="button" className="hover:text-green-700 font-medium">
-                Serviços
-              </button>
-
-              {openDropdown === "servicos" && (
-                <motion.div
-                  initial={{ opacity: 0, y: -6 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  exit={{ opacity: 0, y: -6 }}
-                  className="absolute left-0 top-8 bg-white shadow-xl rounded-xl py-2 w-56"
-                >
-                  <Link href="/banho-e-tosa" className="block px-4 py-2 hover:bg-green-100 text-gray-700">
-                    Banho e Tosa
-                  </Link>
-                  <Link href="/consultas" className="block px-4 py-2 hover:bg-green-100 text-gray-700">
-                    Consultas
-                  </Link>
-                  <Link href="/vacinacao" className="block px-4 py-2 hover:bg-green-100 text-gray-700">
-                    Vacinação
-                  </Link>
-                  <Link href="/adestramento" className="block px-4 py-2 hover:bg-green-100 text-gray-700">
-                    Adestramento
-                  </Link>
-                </motion.div>
-              )}
-            </li>
-
-            {/* Blog / Dicas */}
             <li>
               <Link href="/blog" className="hover:text-green-700 font-medium">
                 Blog / Dicas
               </Link>
             </li>
-
-            {/* Meus Pets */}
             <li>
               <Link href="/animais" className="hover:text-green-700 font-medium">
                 Meus Pets
@@ -119,6 +95,10 @@ export default function Navbar() {
           <input
             type="text"
             placeholder="Buscar produtos..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            onFocus={() => setIsFocused(true)}
+            onBlur={() => setTimeout(() => setIsFocused(false), 200)}
             className="border border-gray-300 rounded-full px-12 py-4 w-full md:max-w-lg text-lg focus:outline-none focus:ring-2 focus:ring-green-500 shadow-md text-black"
           />
           <svg
@@ -135,6 +115,36 @@ export default function Navbar() {
               d="M21 21l-4.35-4.35M5 11a6 6 0 1112 0 6 6 0 01-12 0z"
             />
           </svg>
+
+          {isFocused && searchTerm.length > 0 && (
+            <div className="absolute mt-2 left-0 w-full md:max-w-lg bg-white border border-gray-200 rounded-xl shadow-lg max-h-80 overflow-y-auto z-50">
+              {filteredProdutos.length > 0 ? (
+                filteredProdutos.map((produto) => (
+                  <Link
+                    key={produto.id}
+                    href={`/produto/${produto.id}`}
+                    className="flex items-center p-3 hover:bg-green-100 cursor-pointer"
+                  >
+                    <Image
+                      src={produto.imagem[0]}
+                      alt={produto.nome}
+                      width={50}
+                      height={50}
+                      className="rounded-lg object-cover"
+                    />
+                    <div className="ml-3 text-left">
+                      <p className="text-sm font-medium text-gray-800">{produto.nome}</p>
+                      <p className="text-sm text-green-600 font-semibold">
+                        R$ {produto.preco.toFixed(2)}
+                      </p>
+                    </div>
+                  </Link>
+                ))
+              ) : (
+                <p className="p-3 text-gray-500">Nenhum produto encontrado</p>
+              )}
+            </div>
+          )}
         </div>
 
         {/* ÍCONES À DIREITA */}
@@ -148,12 +158,13 @@ export default function Navbar() {
             </span>
           </Link>
 
-          <Link href="/login" className="relative group flex items-center cursor-pointer">
+          {/* Ícone do Usuário */}
+          <Link href={usuario ? "/usuario" : "/login"} className="relative group flex items-center cursor-pointer">
             <div className="bg-white p-2 rounded-full shadow-md transition-transform duration-300 group-hover:scale-110">
               <User className="text-black w-6 h-6" />
             </div>
             <span className="absolute left-1/2 -translate-x-1/2 mt-12 px-3 py-1 bg-black text-white text-sm rounded-md opacity-0 group-hover:opacity-100 transition-all duration-300">
-              Login
+              {usuario ? usuario.nome : "Login"}
             </span>
           </Link>
 

@@ -7,6 +7,7 @@ import { motion } from "framer-motion";
 import Navbar from "../componentes/Navbar";
 import BarraLateralCart from "../componentes/_BarraLateralCart";
 import produtos from "../data/produtos";
+import Rodape from "../componentes/Rodape";
 
 export default function ProdutosPage() {
   const { addToCart, setSidebarOpen } = useCart();
@@ -107,11 +108,14 @@ export default function ProdutosPage() {
               ))}
             </div>
           </main>
+          
         </div>
+        <Rodape />
       </div>
 
       {/* Barra lateral de carrinho */}
       <BarraLateralCart />
     </>
+      
   );
 }

@@ -29,8 +29,11 @@ export default function Login() {
       return;
     }
 
+    // Salva o usuário no localStorage para persistir a sessão
+    localStorage.setItem("usuarioLogado", JSON.stringify(usuario));
+
     alert(`Logado com sucesso!\nBem-vindo, ${usuario.nome}`);
-    router.push("/"); 
+    router.push("/usuario"); // Redireciona para a tela do usuário
   };
 
   const inputVariant = {

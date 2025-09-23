@@ -2,7 +2,7 @@
 import { useRouter } from "next/router";
 import { useCart } from "../../context/CartContext";
 import { motion } from "framer-motion";
-import { Star, Plus, ChevronLeft, ChevronRight, Minus } from "lucide-react";
+import { Plus, Minus } from "lucide-react";
 import Navbar from "../../componentes/Navbar";
 import Image from "next/image";
 import { useState } from "react";
@@ -78,7 +78,7 @@ export default function ProdutoPage() {
   if (!produto) return <p className="p-10">Produto não encontrado.</p>;
 
   const handleAddToCart = () => {
-    addToCart({ ...produto, quantidade }); // adiciona a quantidade selecionada
+    addToCart({ ...produto, quantity: quantidade });
     setSidebarOpen(true);
   };
 
@@ -141,14 +141,6 @@ export default function ProdutoPage() {
               Categoria: {produto.categoria} • Marca: {produto.marca}
             </p>
 
-            {/* Avaliações fake */}
-            <div className="flex items-center gap-1 text-yellow-500 mb-6">
-              {[...Array(5)].map((_, i) => (
-                <Star key={i} size={20} fill="currentColor" />
-              ))}
-              <span className="ml-2 text-sm text-gray-600">120 avaliações</span>
-            </div>
-
             {/* Preço */}
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -196,7 +188,9 @@ export default function ProdutoPage() {
               <h2 className="text-xl font-semibold mb-4 text-green-700">
                 Descrição
               </h2>
-              <p className="text-gray-700 leading-relaxed">{produto.descricao}</p>
+              <p className="text-gray-700 leading-relaxed">
+                {produto.descricao}
+              </p>
             </motion.div>
 
             {/* Especificações */}
@@ -212,7 +206,8 @@ export default function ProdutoPage() {
               <ul className="space-y-2 text-gray-700">
                 {Object.entries(produto.especificacoes).map(([key, value]) => (
                   <li key={key}>
-                    <span className="font-medium capitalize">{key}:</span> {value}
+                    <span className="font-medium capitalize">{key}:</span>{" "}
+                    {value}
                   </li>
                 ))}
               </ul>

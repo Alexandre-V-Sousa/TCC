@@ -4,6 +4,7 @@ import { useRouter } from "next/router";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabaseClient";
+import Rodape from "../componentes/Rodape";
 
 export default function Signup() {
   const router = useRouter();
@@ -200,5 +201,7 @@ export default function Signup() {
         </motion.div>
       </motion.div>
     </motion.div>
+    
   );
+    
 }
