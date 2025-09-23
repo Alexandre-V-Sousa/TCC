@@ -72,37 +72,52 @@ export default function Home() {
   const scrollRight = (ref) =>
     ref.current?.scrollBy({ left: 320, behavior: "smooth" });
 
-  // ---------------- DROPDOWNS ----------------
+  // mudança sut DROPDOWNS 
   const [openDropdown, setOpenDropdown] = useState(null); // "produtos" | "servicos" | null
 
-  // ---------------- RETORNO ----------------
+  //  RETORNO 
   return (
     <main className="bg-[#ECFFEB]">
       <Navbar openDropdown={openDropdown} setOpenDropdown={setOpenDropdown} />
 
-      
-     
-      {/* ---------------- BENEFÍCIOS ---------------- */}
-      <section className="py-6 px-4 max-w-6xl mx-auto flex flex-wrap justify-center gap-4">
-        <div className="flex items-center gap-3 bg-white shadow-lg rounded-2xl px-6 py-4 hover:shadow-2xl transition w-full md:w-auto">
-          <Truck className="text-green-700" size={28} />
-          <span className="text-gray-700 font-semibold">Frete Grátis</span>
-        </div>
-        <div className="flex items-center gap-3 bg-white shadow-lg rounded-2xl px-6 py-4 hover:shadow-2xl transition w-full md:w-auto">
-          <Clock className="text-green-700" size={28} />
-          <span className="text-gray-700 font-semibold">Entrega Rápida</span>
-        </div>
-        <div className="flex items-center gap-3 bg-white shadow-lg rounded-2xl px-6 py-4 hover:shadow-2xl transition w-full md:w-auto">
-          <ShoppingCart className="text-green-700" size={28} />
-          <span className="text-gray-700 font-semibold">Retirar na Loja</span>
-        </div>
-        <div className="flex items-center gap-3 bg-white shadow-lg rounded-2xl px-6 py-4 hover:shadow-2xl transition w-full md:w-auto">
-          <CreditCard className="text-green-700" size={28} />
-          <span className="text-gray-700 font-semibold">
-            Formas de Pagamento
-          </span>
-        </div>
-      </section>
+       {/*  CATEGORIAS  */}
+      <motion.section
+        className="py-10 px-4 max-w-6xl mx-auto flex flex-wrap justify-center gap-4"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        transition={{ duration: 0.6 }}
+      >
+        <Link
+          href="/animais/cachorro"
+          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
+        >
+          <Dog size={24} /> Cães
+        </Link>
+        <Link
+          href="/animais/gato"
+          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
+        >
+          <Cat size={24} /> Gatos
+        </Link>
+        <Link
+          href="/animais/peixe"
+          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
+        >
+          <Fish size={24} /> Peixes
+        </Link>
+        <Link
+          href="/animais/outros"
+          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
+        >
+          <Box size={24} /> Outros Pets
+        </Link>
+        <Link
+          href="/casa-e-jardim"
+          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
+        >
+          <HomeIcon size={24} /> Casa & Jardim
+        </Link>
+      </motion.section>
 
       {/* ---------------- CARROSSEL PRINCIPAL ---------------- */}
       <section className="relative mt-6 w-full flex justify-center">
@@ -161,41 +176,12 @@ export default function Home() {
         </div>
       </section>
 
-      {/* ---------------- CATEGORIAS ---------------- */}
-      <section className="py-10 px-4 max-w-6xl mx-auto flex flex-wrap justify-center gap-4">
-        <Link
-          href="/animais/cachorro"
-          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
-        >
-          <Dog size={24} /> Cães
-        </Link>
-        <Link
-          href="/animais/gato"
-          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
-        >
-          <Cat size={24} /> Gatos
-        </Link>
-        <Link
-          href="/animais/peixe"
-          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
-        >
-          <Fish size={24} /> Peixes
-        </Link>
-        <Link
-          href="/animais/outros"
-          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
-        >
-          <Box size={24} /> Outros Pets
-        </Link>
-        <Link
-          href="/casa-e-jardim"
-          className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
-        >
-          <HomeIcon size={24} /> Casa & Jardim
-        </Link>
-      </section>
+     
 
-      {/* ---------------- CARROSSEL CÃES ---------------- */}
+      
+     
+
+      {/*mudança  CARROSSEL CÃES  */}
       <section className="py-10 max-w-6xl mx-auto">
         <h2 className="text-2xl sm:text-3xl font-bold text-green-800 mb-6">
           Produtos para Cães
@@ -278,9 +264,8 @@ export default function Home() {
           </button>
         </div>
       </section>
+
       <Rodape />
-      
     </main>
-    
   );
 }
