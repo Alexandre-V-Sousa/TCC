@@ -2,9 +2,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/router";
 import Image from "next/image";
-import Link from "next/link"
+import Link from "next/link";
 import { motion } from "framer-motion";
 import { User, ShoppingCart, Heart, Shield, LogOut } from "lucide-react";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Usuario() {
     const router = useRouter();
@@ -20,7 +21,7 @@ export default function Usuario() {
         }
         setUsuario(usuarioLogado);
         setFormData(usuarioLogado);
-        if (usuarioLogado.foto) setFotoPerfil(usuarioLogado.foto);
+        if (usuarioLogado.imagemUsuario) setFotoPerfil(usuarioLogado.imagemUsuario);
     }, []);
 
     if (!usuario) return <p>Carregando...</p>;
@@ -30,12 +31,53 @@ export default function Usuario() {
         router.push("/login");
     };
 
-    const handleFotoChange = (e) => {
+    // Upload de foto no Supabase Storage
+    const uploadFotoPerfil = async (usuarioId, file) => {
+        if (!file) return null;
+        const fileExt = file.name.split(".").pop();
+        const fileName = `${usuarioId}.${fileExt}`;
+        const filePath = `${fileName}`;
+
+        const { error } = await supabase.storage
+            .from("imagem de perfil")
+            .upload(filePath, file, { upsert: true });
+
+        if (error) {
+            console.error("Erro ao fazer upload da imagem:", error);
+            return null;
+        }
+
+        const { publicUrl } = supabase.storage
+            .from("imagem de perfil")
+            .getPublicUrl(filePath);
+
+        return publicUrl;
+    };
+
+    // Atualiza dados do usuário
+    const atualizarUsuario = async (usuarioId, dadosAtualizados) => {
+        const { data, error } = await supabase
+            .from("usuarios")
+            .update(dadosAtualizados)
+            .eq("id_user", usuarioId);
+
+        if (error) {
+            console.error("Erro ao atualizar usuário:", error);
+            return false;
+        }
+        return true;
+    };
+
+    const handleFotoChange = async (e) => {
         const file = e.target.files[0];
         if (file) {
             const url = URL.createObjectURL(file);
             setFotoPerfil(url);
-            // Aqui você poderia enviar para o Supabase Storage
+
+            const publicUrl = await uploadFotoPerfil(usuario.id_user, file);
+            if (publicUrl) {
+                setFormData({ ...formData, imagemUsuario: publicUrl });
+            }
         }
     };
 
@@ -43,9 +85,21 @@ export default function Usuario() {
         setFormData({ ...formData, [e.target.name]: e.target.value });
     };
 
-    const handleSalvar = () => {
-        alert("Dados salvos com sucesso!");
-        // Aqui você poderia atualizar no Supabase
+    const handleSalvar = async () => {
+        const dadosAtualizados = { ...formData };
+        delete dadosAtualizados.cpf;
+
+        const sucesso = await atualizarUsuario(usuario.id_user, dadosAtualizados);
+        if (sucesso) {
+            alert("Dados salvos com sucesso!");
+            localStorage.setItem(
+                "usuarioLogado",
+                JSON.stringify({ ...usuario, ...dadosAtualizados })
+            );
+            setUsuario({ ...usuario, ...dadosAtualizados });
+        } else {
+            alert("Erro ao salvar dados.");
+        }
     };
 
     return (
@@ -57,10 +111,7 @@ export default function Usuario() {
                 transition={{ type: "spring", stiffness: 100, damping: 20 }}
                 className="w-64 bg-white shadow-lg p-6 flex flex-col gap-6"
             >
-                <motion.div
-                    className="flex flex-col items-center mb-6"
-                    whileHover={{ scale: 1.05 }}
-                >
+                <motion.div className="flex flex-col items-center mb-6" whileHover={{ scale: 1.05 }}>
                     <div className="relative w-24 h-24">
                         <Image
                             src={fotoPerfil}
@@ -83,69 +134,42 @@ export default function Usuario() {
                         transition={{ type: "spring", stiffness: 100, damping: 20 }}
                     >
                         <Link
-                            href="index"
+                            href="/"
                             className="inline-flex items-center gap-2 text-green-700 font-semibold hover:text-green-900 transition-colors"
                         >
                             ← Início
                         </Link>
                     </motion.div>
-
                 </motion.div>
 
                 <nav className="flex flex-col gap-3 text-gray-700">
-                    <motion.button
-                        className="flex items-center gap-2 hover:text-green-700 font-semibold"
-                        whileHover={{ scale: 1.05 }}
-                    >
+                    <motion.button className="flex items-center gap-2 hover:text-green-700 font-semibold" whileHover={{ scale: 1.05 }}>
                         <User /> Meus dados
                     </motion.button>
-                    <motion.button
-                        className="flex items-center gap-2 hover:text-green-700 font-semibold"
-                        whileHover={{ scale: 1.05 }}
-                    >
+                    <motion.button className="flex items-center gap-2 hover:text-green-700 font-semibold" whileHover={{ scale: 1.05 }}>
                         <ShoppingCart /> Meus pedidos
                     </motion.button>
-                    <motion.button
-                        className="flex items-center gap-2 hover:text-green-700 font-semibold"
-                        whileHover={{ scale: 1.05 }}
-                    >
+                    <motion.button className="flex items-center gap-2 hover:text-green-700 font-semibold" whileHover={{ scale: 1.05 }}>
                         <Heart /> Meus pets
                     </motion.button>
-                    <motion.button
-                        className="flex items-center gap-2 hover:text-green-700 font-semibold"
-                        whileHover={{ scale: 1.05 }}
-                    >
+                    <motion.button className="flex items-center gap-2 hover:text-green-700 font-semibold" whileHover={{ scale: 1.05 }}>
                         <Shield /> Alterar senha
                     </motion.button>
-                    <motion.button
-                        onClick={handleLogout}
-                        className="flex items-center gap-2 hover:text-red-600 font-semibold mt-auto"
-                        whileHover={{ scale: 1.05 }}
-                    >
+                    <motion.button onClick={handleLogout} className="flex items-center gap-2 hover:text-red-600 font-semibold mt-auto" whileHover={{ scale: 1.05 }}>
                         <LogOut /> Sair da conta
                     </motion.button>
                 </nav>
             </motion.aside>
 
             {/* Conteúdo principal */}
-            <motion.main
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                transition={{ duration: 0.5 }}
-                className="flex-1 p-8"
-            >
+            <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="flex-1 p-8">
                 <h2 className="text-3xl font-bold text-gray-800 mb-4">Meus Dados</h2>
                 <p className="text-gray-600 mb-6">
                     Confira ou altere seus dados de cadastro e informações de entrega.
                 </p>
 
-                <motion.div
-                    className="grid grid-cols-1 md:grid-cols-2 gap-4"
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ staggerChildren: 0.1 }}
-                >
-                    {/** Dados pessoais **/}
+                <motion.div className="grid grid-cols-1 md:grid-cols-2 gap-4" initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ staggerChildren: 0.1 }}>
+                    {/* Dados pessoais */}
                     {[
                         { label: "Nome completo", name: "nome" },
                         { label: "CPF", name: "cpf", disabled: true },
@@ -154,11 +178,7 @@ export default function Usuario() {
                         { label: "Data de nascimento", name: "data_nasc", type: "date" },
                         { label: "Telefone", name: "telefone" },
                     ].map((item) => (
-                        <motion.div
-                            key={item.name}
-                            className="flex flex-col"
-                            whileHover={{ scale: 1.02 }}
-                        >
+                        <motion.div key={item.name} className="flex flex-col" whileHover={{ scale: 1.02 }}>
                             <label className="block text-sm font-medium text-gray-700">{item.label}</label>
                             {item.type === "select" ? (
                                 <select
@@ -184,19 +204,14 @@ export default function Usuario() {
                         </motion.div>
                     ))}
 
-                    {/** Dados de entrega **/}
+                    {/* Dados de entrega */}
                     {[
-                        { label: "CEP", name: "cep" },
-                        { label: "Endereço", name: "endereco" },
+                        { label: "CEP", name: "CEP" },
+                        { label: "Endereço", name: "logradouro" }, 
                         { label: "Número", name: "numero" },
-                        { label: "Cidade", name: "cidade" },
-                        { label: "Estado", name: "estado" },
+                        { label: "Bairro", name: "bairro" },
                     ].map((item) => (
-                        <motion.div
-                            key={item.name}
-                            className="flex flex-col"
-                            whileHover={{ scale: 1.02 }}
-                        >
+                        <motion.div key={item.name} className="flex flex-col" whileHover={{ scale: 1.02 }}>
                             <label className="block text-sm font-medium text-gray-700">{item.label}</label>
                             <input
                                 type="text"

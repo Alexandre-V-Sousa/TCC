@@ -51,7 +51,7 @@ export default function Rodape() {
         </div>
       </div>
       <div className="text-center text-gray-500 text-xs py-4 border-t border-green-100">
-        © {new Date().getFullYear()} PetShop Verde. Todos os direitos reservados.
+        © {new Date().getFullYear()} Agro Patricia. Todos os direitos reservados.
       </div>
     </footer>
   );

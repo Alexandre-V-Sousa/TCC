@@ -4,14 +4,58 @@ import Link from "next/link";
 import { Dog, User, ShoppingCart, Mail } from "lucide-react";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
-import produtos from "../../src/data/produtos";
+import { supabase } from "../lib/supabaseClient";
 
 export default function Navbar() {
   const [openDropdown, setOpenDropdown] = useState(null);
   const [searchTerm, setSearchTerm] = useState("");
-  const [isFocused, setIsFocused] = useState(false); 
+  const [isFocused, setIsFocused] = useState(false);
   const [usuario, setUsuario] = useState(null);
+  const [produtos, setProdutos] = useState([]);
 
+  // Busca produtos do Supabase e resolve imagens
+  useEffect(() => {
+    async function fetchProdutos() {
+      const { data, error } = await supabase.from("prod").select("*");
+      if (!error && data) {
+        const produtosComImg = await Promise.all(
+          data.map(async (p) => {
+            const imgField = p.imagen ?? p.imagem ?? "";
+            let resolved = "/placeholder.png";
+
+            try {
+              if (!imgField) {
+                resolved = "/placeholder.png";
+              } else if (
+                typeof imgField === "string" &&
+                (imgField.startsWith("http://") || imgField.startsWith("https://"))
+              ) {
+                resolved = decodeURI(imgField);
+              } else {
+                const { data: urlData, error: urlErr } = supabase.storage
+                  .from("imagen dos produtos")
+                  .getPublicUrl(String(imgField));
+                if (!urlErr && urlData && urlData.publicUrl) {
+                  resolved = urlData.publicUrl;
+                } else {
+                  resolved = String(imgField);
+                }
+              }
+            } catch (e) {
+              resolved = "/placeholder.png";
+            }
+
+            return { ...p, imagenResolved: resolved };
+          })
+        );
+        setProdutos(produtosComImg);
+      }
+      if (error) console.log("Erro ao buscar produtos:", error);
+    }
+    fetchProdutos();
+  }, []);
+
+  // Carrega usuário logado do localStorage
   useEffect(() => {
     const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
     if (usuarioLogado) {
@@ -20,7 +64,7 @@ export default function Navbar() {
   }, []);
 
   const filteredProdutos = produtos.filter((produto) =>
-    produto.nome.toLowerCase().includes(searchTerm.toLowerCase())
+    (produto.nome || "").toLowerCase().includes(searchTerm.toLowerCase())
   );
 
   return (
@@ -82,11 +126,6 @@ export default function Navbar() {
                 Blog / Dicas
               </Link>
             </li>
-            <li>
-              <Link href="/animais" className="hover:text-green-700 font-medium">
-                Meus Pets
-              </Link>
-            </li>
           </ul>
         </div>
 
@@ -122,20 +161,20 @@ export default function Navbar() {
                 filteredProdutos.map((produto) => (
                   <Link
                     key={produto.id}
-                    href={`/produto/${produto.id}`}
+                    href={`/produto/${produto.id_prod}`}
                     className="flex items-center p-3 hover:bg-green-100 cursor-pointer"
                   >
                     <Image
-                      src={produto.imagem[0]}
-                      alt={produto.nome}
+                      src={produto.imagenResolved || "/placeholder.png"}
+                      alt={produto.nome || "Produto"}
                       width={50}
                       height={50}
                       className="rounded-lg object-cover"
                     />
                     <div className="ml-3 text-left">
-                      <p className="text-sm font-medium text-gray-800">{produto.nome}</p>
+                      <p className="text-sm font-medium text-gray-800">{produto.nome || "Produto sem nome"}</p>
                       <p className="text-sm text-green-600 font-semibold">
-                        R$ {produto.preco.toFixed(2)}
+                        R$ {(produto.valor_venda ?? produto.preco ?? 0).toFixed(2)}
                       </p>
                     </div>
                   </Link>
@@ -158,7 +197,6 @@ export default function Navbar() {
             </span>
           </Link>
 
-          {/* Ícone do Usuário */}
           <Link href={usuario ? "/usuario" : "/login"} className="relative group flex items-center cursor-pointer">
             <div className="bg-white p-2 rounded-full shadow-md transition-transform duration-300 group-hover:scale-110">
               <User className="text-black w-6 h-6" />

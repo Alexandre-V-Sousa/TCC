@@ -43,121 +43,140 @@ export default function CarrinhoPage() {
 
   return (
     <>
-      <Navbar/>
-    <main className="bg-[#ECFFEB] min-h-screen py-10 px-4 text-black">
-      <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-        {/* Conteúdo principal */}
-        <section className="lg:col-span-8 bg-white p-6 rounded-2xl shadow-md">
-          <h1 className="text-2xl font-bold mb-4">Carrinho</h1>
+      <Navbar />
+      <main className="bg-[#ECFFEB] min-h-screen py-10 px-4 text-black">
+        <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
+          {/* Conteúdo principal */}
+          <section className="lg:col-span-8 bg-white p-6 rounded-2xl shadow-md">
+            <h1 className="text-2xl font-bold mb-4">Carrinho</h1>
 
-          {cartItems.length === 0 ? (
-            <div className="py-20 text-center text-gray-500">
-              Sua sacola está vazia. <Link href="/">Voltar ao catálogo</Link>
-            </div>
-          ) : (
-            <>
-              <div className="space-y-6">
-                {cartItems.map((item) => (
-                  <div
-                    key={item.id}
-                    className="border rounded-lg p-4 flex flex-col md:flex-row gap-4"
-                  >
-                    <div className="w-full md:w-28 h-28 relative bg-gray-50 rounded-md overflow-hidden flex-shrink-0">
-                      <Image
-                        src={item.imagem}
-                        alt={item.nome}
-                        fill
-                        style={{ objectFit: "contain" }}
-                      />
-                    </div>
-
-                    <div className="flex-1 flex flex-col justify-between">
-                      <div>
-                        <p className="font-medium text-gray-800">{item.nome}</p>
-                        {item.variant && (
-                          <p className="text-sm text-gray-500">{item.variant}</p>
+            {cartItems.length === 0 ? (
+              <div className="py-20 text-center text-gray-500">
+                Sua sacola está vazia. <Link href="/">Voltar ao catálogo</Link>
+              </div>
+            ) : (
+              <>
+                <div className="space-y-6">
+                  {cartItems.map((item) => (
+                    <div
+                      key={`${item.id_prod}-${item.nome}`}
+                      className="border rounded-lg p-4 flex flex-col md:flex-row gap-4"
+                    >
+                      <div className="w-full md:w-28 h-28 relative bg-gray-50 rounded-md overflow-hidden flex-shrink-0">
+                        {/* Correção da imagem */}
+                        {item.imagem && item.imagem[0] && (
+                          <Image
+                            src={item.imagem[0]}
+                            alt={item.nome}
+                            fill
+                            style={{ objectFit: "contain" }}
+                          />
                         )}
-                        <p className="mt-2 text-sm text-gray-600">
-                          R$ {item.preco.toFixed(2)}
-                        </p>
                       </div>
 
-                      <div className="mt-4 md:mt-0 flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <button
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity - 1)
-                            }
-                            className="border rounded px-3 py-2 hover:bg-gray-100"
-                          >
-                            <Minus size={14} />
-                          </button>
-                          <div className="px-3 py-2 border rounded min-w-[48px] text-center">
-                            {item.quantity}
-                          </div>
-                          <button
-                            onClick={() =>
-                              updateQuantity(item.id, item.quantity + 1)
-                            }
-                            className="border rounded px-3 py-2 hover:bg-gray-100"
-                          >
-                            <Plus size={14} />
-                          </button>
-                          <button
-                            onClick={() => removeItem(item.id)}
-                            className="ml-4 text-red-500 hover:text-red-700"
-                          >
-                            <Trash2 />
-                          </button>
+                      <div className="flex-1 flex flex-col justify-between">
+                        <div>
+                          <p className="font-medium text-gray-800">{item.nome}</p>
+                          {item.variant && (
+                            <p className="text-sm text-gray-500">{item.variant}</p>
+                          )}
+                          <p className="mt-2 text-sm text-gray-600">
+                            R$ {(item.valor_venda || item.preco || 0).toFixed(2)}
+                          </p>
                         </div>
 
-                        <div className="text-right">
-                          <div className="text-sm text-gray-500">Total</div>
-                          <div className="font-semibold">
-                            {format(item.preco * item.quantity)}
+                        <div className="mt-4 md:mt-0 flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <button
+                              onClick={() =>
+                                updateQuantity(
+                                  item.id_prod,
+                                  item.nome,
+                                  (item.quantity || 1) - 1
+                                )
+                              }
+                              className="border rounded px-3 py-2 hover:bg-gray-100"
+                            >
+                              <Minus size={14} />
+                            </button>
+                            <div className="px-3 py-2 border rounded min-w-[48px] text-center">
+                              {item.quantity || 1}
+                            </div>
+                            <button
+                              onClick={() =>
+                                updateQuantity(
+                                  item.id_prod,
+                                  item.nome,
+                                  (item.quantity || 1) + 1
+                                )
+                              }
+                              className="border rounded px-3 py-2 hover:bg-gray-100"
+                            >
+                              <Plus size={14} />
+                            </button>
+                            <button
+                              onClick={() => removeItem(item.id_prod, item.nome)}
+                              className="ml-4 text-red-500 hover:text-red-700"
+                            >
+                              <Trash2 />
+                            </button>
+                          </div>
+
+                          <div className="text-right">
+                            <div className="text-sm text-gray-500">Total</div>
+                            <div className="font-semibold">
+                              {format(
+                                (item.valor_venda || item.preco || 0) *
+                                  (item.quantity || 1)
+                              )}
+                            </div>
                           </div>
                         </div>
                       </div>
                     </div>
+                  ))}
+                </div>
+
+                <div className="mt-6 flex items-center justify-between">
+                  <button
+                    onClick={clearCart}
+                    className="text-sm text-blue-600 hover:underline"
+                  >
+                    Limpar sacola
+                  </button>
+                  <div className="text-sm text-gray-600">
+                    {cartItems.length} itens
                   </div>
-                ))}
-              </div>
+                </div>
+              </>
+            )}
+          </section>
 
-              <div className="mt-6 flex items-center justify-between">
+          {/* Resumo à direita */}
+          <aside className="lg:col-span-4 space-y-6">
+            {/* CEP */}
+            <div className="bg-white p-6 rounded-2xl shadow-md">
+              <label className="block text-sm font-medium text-gray-700">
+                Qual o CEP?
+              </label>
+              <div className="flex gap-2 mt-2">
+                <input
+                  value={cep}
+                  onChange={(e) => setCep(e.target.value)}
+                  placeholder="00000-000"
+                  className="flex-1 border rounded px-3 py-2 focus:outline-none"
+                />
                 <button
-                  onClick={clearCart}
-                  className="text-sm text-blue-600 hover:underline"
+                  onClick={applyCep}
+                  className="bg-gray-800 text-white px-4 rounded"
                 >
-                  Limpar sacola
+                  Aplicar
                 </button>
-                <div className="text-sm text-gray-600">{cartItems.length} itens</div>
               </div>
-            </>
-          )}
-        </section>
-
-        {/* Resumo à direita */}
-        <aside className="lg:col-span-4 space-y-6">
-          <div className="bg-white p-6 rounded-2xl shadow-md">
-            <label className="block text-sm font-medium text-gray-700">
-              Qual o CEP?
-            </label>
-            <div className="flex gap-2 mt-2">
-              <input
-                value={cep}
-                onChange={(e) => setCep(e.target.value)}
-                placeholder="00000-000"
-                className="flex-1 border rounded px-3 py-2 focus:outline-none"
-              />
-              <button
-                onClick={applyCep}
-                className="bg-gray-800 text-white px-4 rounded"
-              >
-                Aplicar
-              </button>
             </div>
 
-            <div className="mt-4">
+            {/* Cupom */}
+            <div className="bg-white p-6 rounded-2xl shadow-md">
               <label className="block text-sm font-medium text-gray-700">
                 Cupom de desconto
               </label>
@@ -175,81 +194,81 @@ export default function CarrinhoPage() {
                   Aplicar
                 </button>
               </div>
-              {cupomMsg && (
-                <p className="text-sm mt-2 text-green-600">{cupomMsg}</p>
-              )}
+              {cupomMsg && <p className="text-sm mt-2 text-green-600">{cupomMsg}</p>}
             </div>
 
-            <div className="mt-6 border-t pt-4 space-y-2">
+            {/* Resumo final */}
+            <div className="bg-white p-6 rounded-2xl shadow-md">
               <div className="flex justify-between text-sm text-gray-600">
                 <span>Valor dos produtos</span>
                 <span>{format(subtotal)}</span>
               </div>
-              <div className="flex justify-between text-sm text-gray-600">
+              <div className="flex justify-between text-sm text-gray-600 mt-2">
                 <span>Frete</span>
                 <span>
-                  {frete == null
-                    ? "Calcule o CEP"
-                    : frete === 0
-                    ? "Grátis"
-                    : format(frete)}
+                  {frete == null ? "Calcule o CEP" : frete === 0 ? "Grátis" : format(frete)}
                 </span>
               </div>
-
               <div className="flex justify-between mt-4 items-end">
                 <div>
                   <div className="text-sm text-gray-600">Total</div>
                   <div className="text-2xl font-bold">{format(total)}</div>
                 </div>
-
                 <button className="bg-[#0b57a4] hover:bg-[#084e8f] text-white px-6 py-3 rounded-lg">
                   Ir para pagamento
                 </button>
               </div>
             </div>
-          </div>
 
-          {/* Formas de pagamento e contato */}
-          <div className="bg-white p-6 rounded-2xl shadow-md">
-            <div className="mb-2">
-              <div className="text-sm text-gray-600 mb-2">Formas de pagamento</div>
-              <div className="flex gap-3 items-center">
-                <Image src="/pagamentos/mastercard.png" width={150} height={150} alt="Mastercard" />
-                <Image src="/pagamentos/visa.png" width={70} height={70} alt="Visa" />
-                <Image src="/pagamentos/pix.png" width={60} height={60} alt="Pix" />
-              </div>
-            </div>
-
-            <div className="border-t pt-4 text-sm text-gray-600">
-              <div className="mb-2">Tem alguma dúvida?</div>
-              <div>(11) 3434-6980 · Atendimento</div>
-            </div>
-          </div>
-
-          {/* Recomendações */}
-          <div className="bg-white p-6 rounded-2xl shadow-md">
-            <h3 className="font-semibold mb-4">Recomendações</h3>
-            <div className="grid grid-cols-2 gap-3">
-              <div className="border rounded p-2 flex flex-col items-center">
-                <div className="w-20 h-20 relative bg-gray-50 rounded overflow-hidden">
-                  <Image src="/recommend/prod1.png" alt="rec1" fill style={{ objectFit: "contain" }} />
+            {/* Formas de pagamento */}
+            <div className="bg-white p-6 rounded-2xl shadow-md">
+              <div className="mb-2">
+                <div className="text-sm text-gray-600 mb-2">Formas de pagamento</div>
+                <div className="flex gap-3 items-center">
+                  <Image src="/pagamentos/mastercard.png" width={150} height={150} alt="Mastercard"/>
+                  <Image src="/pagamentos/visa.png" width={70} height={70} alt="Visa"/>
+                  <Image src="/pagamentos/pix.png" width={60} height={60} alt="Pix"/>
                 </div>
-                <p className="text-xs mt-2 text-center">Produto 1</p>
-                <p className="text-sm font-semibold">R$ 19,90</p>
               </div>
-
-              <div className="border rounded p-2 flex flex-col items-center">
-                <div className="w-20 h-20 relative bg-gray-50 rounded overflow-hidden">
-                  <Image src="/recommend/prod2.png" alt="rec2" fill style={{ objectFit: "contain" }} />
-                </div>
-                <p className="text-xs mt-2 text-center">Produto 2</p>
-                <p className="text-sm font-semibold">R$ 12,90</p>
+              <div className="border-t pt-4 text-sm text-gray-600">
+                <div className="mb-2">Tem alguma dúvida?</div>
+                <div>(11) 3434-6980 · Atendimento</div>
               </div>
             </div>
-          </div>
-        </aside>
-      </div>
-    </main>
+
+            {/* Recomendações */}
+            <div className="bg-white p-6 rounded-2xl shadow-md">
+              <h3 className="font-semibold mb-4">Recomendações</h3>
+              <div className="grid grid-cols-2 gap-3">
+                <div className="border rounded p-2 flex flex-col items-center">
+                  <div className="w-20 h-20 relative bg-gray-50 rounded overflow-hidden">
+                    <Image
+                      src="/recommend/prod1.png"
+                      alt="rec1"
+                      fill
+                      style={{ objectFit: "contain" }}
+                    />
+                  </div>
+                  <p className="text-xs mt-2 text-center">Produto 1</p>
+                  <p className="text-sm font-semibold">R$ 19,90</p>
+                </div>
+                <div className="border rounded p-2 flex flex-col items-center">
+                  <div className="w-20 h-20 relative bg-gray-50 rounded overflow-hidden">
+                    <Image
+                      src="/recommend/prod2.png"
+                      alt="rec2"
+                      fill
+                      style={{ objectFit: "contain" }}
+                    />
+                  </div>
+                  <p className="text-xs mt-2 text-center">Produto 2</p>
+                  <p className="text-sm font-semibold">R$ 12,90</p>
+                </div>
+              </div>
+            </div>
+          </aside>
+        </div>
+      </main>
     </>
   );
 }

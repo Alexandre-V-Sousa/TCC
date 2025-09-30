@@ -88,31 +88,31 @@ export default function Home() {
         transition={{ duration: 0.6 }}
       >
         <Link
-          href="/animais/cachorro"
+          href="/produtos"
           className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
         >
           <Dog size={24} /> Cães
         </Link>
         <Link
-          href="/animais/gato"
+          href="/produtos"
           className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
         >
           <Cat size={24} /> Gatos
         </Link>
         <Link
-          href="/animais/peixe"
+          href="/produtos"
           className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
         >
           <Fish size={24} /> Peixes
         </Link>
         <Link
-          href="/animais/outros"
+          href="/produtos"
           className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
         >
           <Box size={24} /> Outros Pets
         </Link>
         <Link
-          href="/casa-e-jardim"
+          href="/produtos"
           className="flex items-center gap-3 px-6 py-4 bg-white text-green-700 rounded-2xl font-bold shadow-lg hover:shadow-2xl transition text-lg justify-center"
         >
           <HomeIcon size={24} /> Casa & Jardim

@@ -7,7 +7,7 @@ export function CartProvider({ children }) {
   const [cartItems, setCartItems] = useState([]);
   const [isSidebarOpen, setSidebarOpen] = useState(false);
 
-  // Carrega do localStorage quando o app inicia
+  // Carrega do localStorage
   useEffect(() => {
     const saved = localStorage.getItem("cartItems");
     if (saved) {
@@ -20,46 +20,53 @@ export function CartProvider({ children }) {
     localStorage.setItem("cartItems", JSON.stringify(cartItems));
   }, [cartItems]);
 
-  // Adicionar produto ao carrinho
+  // Gera chave única do produto
+  const getKey = (product) => `${product.id_prod}-${product.nome}`;
+
+  // Adicionar produto ao carrinho (respeita quantity)
   const addToCart = (product) => {
+    const key = getKey(product);
     setCartItems((prev) => {
-      const existing = prev.find((item) => item.id === product.id);
+      const existing = prev.find((item) => getKey(item) === key);
       if (existing) {
         return prev.map((item) =>
-          item.id === product.id
-            ? { ...item, quantity: item.quantity + product.quantity }
+          getKey(item) === key
+            ? { ...item, quantity: item.quantity + (product.quantity || 1) }
             : item
         );
       }
-      return [...prev, { ...product, quantity: product.quantity }];
+      return [...prev, { ...product, quantity: product.quantity || 1 }];
     });
     setSidebarOpen(true);
   };
 
   // Remover item
-  const removeItem = (id) => {
-    setCartItems((prev) => prev.filter((item) => item.id !== id));
+  const removeItem = (id, nome) => {
+    setCartItems((prev) =>
+      prev.filter((item) => getKey(item) !== `${id}-${nome}`)
+    );
   };
 
   // Limpar carrinho
-  const clearCart = () => {
-    setCartItems([]);
-  };
+  const clearCart = () => setCartItems([]);
 
-  // Atualizar quantidade
-  const updateQuantity = (id, quantity) => {
+  // Atualizar quantidade manualmente
+  const updateQuantity = (id, nome, quantity) => {
     if (quantity <= 0) {
-      removeItem(id);
+      removeItem(id, nome);
       return;
     }
     setCartItems((prev) =>
-      prev.map((item) => (item.id === id ? { ...item, quantity } : item))
+      prev.map((item) =>
+        getKey(item) === `${id}-${nome}` ? { ...item, quantity } : item
+      )
     );
   };
 
   // Subtotal
   const subtotal = cartItems.reduce(
-    (acc, item) => acc + item.preco * item.quantity,
+    (acc, item) =>
+      acc + (item.valor_venda || item.preco || 0) * (item.quantity || 1),
     0
   );
 
