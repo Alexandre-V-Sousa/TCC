@@ -1,17 +1,22 @@
+// CarrinhoPage.js
 "use client";
+
 import Image from "next/image";
 import Link from "next/link";
 import { Trash2, Plus, Minus } from "lucide-react";
 import { useCart } from "../../context/CartContext";
 import Navbar from "../../componentes/Navbar";
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { supabase } from "../../lib/supabaseClient";
 
 export default function CarrinhoPage() {
-  const { cartItems, updateQuantity, removeItem, subtotal, clearCart } = useCart();
+  const { cartItems, updateQuantity, removeItem, subtotal, clearCart, addToCart } = useCart();
   const [cep, setCep] = useState("");
   const [cupom, setCupom] = useState("");
   const [cupomMsg, setCupomMsg] = useState(null);
   const [frete, setFrete] = useState(null);
+  const [recomendados, setRecomendados] = useState([]);
+  const [loading, setLoading] = useState(true);
 
   const format = (v) =>
     v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -41,18 +46,62 @@ export default function CarrinhoPage() {
     return base;
   })();
 
+  // Buscar produtos recomendados
+  useEffect(() => {
+    async function fetchRecomendados() {
+      setLoading(true);
+      const { data, error } = await supabase.from("prod").select("*").limit(4);
+
+      if (!error && data) {
+        const produtosComUrl = await Promise.all(
+          data.map(async (p) => {
+            const imgField = p.imagen ?? p.imagem ?? "";
+            let resolved = "/placeholder.png";
+
+            try {
+              if (!imgField) {
+                resolved = "/placeholder.png";
+              } else if (typeof imgField === "string" && (imgField.startsWith("http://") || imgField.startsWith("https://"))) {
+                resolved = decodeURI(imgField);
+              } else {
+                const { data: urlData, error: urlErr } = supabase.storage
+                  .from("imagen dos produtos")
+                  .getPublicUrl(String(imgField));
+                if (!urlErr && urlData && urlData.publicUrl) {
+                  resolved = urlData.publicUrl;
+                } else {
+                  resolved = String(imgField);
+                }
+              }
+            } catch {
+              resolved = "/placeholder.png";
+            }
+
+            return { ...p, imagenResolved: resolved };
+          })
+        );
+
+        setRecomendados(produtosComUrl);
+      }
+
+      setLoading(false);
+    }
+
+    fetchRecomendados();
+  }, []);
+
   return (
     <>
       <Navbar />
       <main className="bg-[#ECFFEB] min-h-screen py-10 px-4 text-black">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-8">
-          {/* Conteúdo principal */}
+          {/* Conteúdo principal - carrinho */}
           <section className="lg:col-span-8 bg-white p-6 rounded-2xl shadow-md">
             <h1 className="text-2xl font-bold mb-4">Carrinho</h1>
-
             {cartItems.length === 0 ? (
               <div className="py-20 text-center text-gray-500">
-                Sua sacola está vazia. <Link href="/">Voltar ao catálogo</Link>
+                Sua sacola está vazia.{" "}
+                <Link href="/">Voltar ao catálogo</Link>
               </div>
             ) : (
               <>
@@ -63,7 +112,6 @@ export default function CarrinhoPage() {
                       className="border rounded-lg p-4 flex flex-col md:flex-row gap-4"
                     >
                       <div className="w-full md:w-28 h-28 relative bg-gray-50 rounded-md overflow-hidden flex-shrink-0">
-                        {/* Correção da imagem */}
                         {item.imagem && item.imagem[0] && (
                           <Image
                             src={item.imagem[0]}
@@ -73,7 +121,6 @@ export default function CarrinhoPage() {
                           />
                         )}
                       </div>
-
                       <div className="flex-1 flex flex-col justify-between">
                         <div>
                           <p className="font-medium text-gray-800">{item.nome}</p>
@@ -84,7 +131,6 @@ export default function CarrinhoPage() {
                             R$ {(item.valor_venda || item.preco || 0).toFixed(2)}
                           </p>
                         </div>
-
                         <div className="mt-4 md:mt-0 flex items-center justify-between">
                           <div className="flex items-center gap-3">
                             <button
@@ -121,7 +167,6 @@ export default function CarrinhoPage() {
                               <Trash2 />
                             </button>
                           </div>
-
                           <div className="text-right">
                             <div className="text-sm text-gray-500">Total</div>
                             <div className="font-semibold">
@@ -136,7 +181,6 @@ export default function CarrinhoPage() {
                     </div>
                   ))}
                 </div>
-
                 <div className="mt-6 flex items-center justify-between">
                   <button
                     onClick={clearCart}
@@ -144,15 +188,13 @@ export default function CarrinhoPage() {
                   >
                     Limpar sacola
                   </button>
-                  <div className="text-sm text-gray-600">
-                    {cartItems.length} itens
-                  </div>
+                  <div className="text-sm text-gray-600">{cartItems.length} itens</div>
                 </div>
               </>
             )}
           </section>
 
-          {/* Resumo à direita */}
+          {/* Resumo + Recomendações */}
           <aside className="lg:col-span-4 space-y-6">
             {/* CEP */}
             <div className="bg-white p-6 rounded-2xl shadow-md">
@@ -194,7 +236,9 @@ export default function CarrinhoPage() {
                   Aplicar
                 </button>
               </div>
-              {cupomMsg && <p className="text-sm mt-2 text-green-600">{cupomMsg}</p>}
+              {cupomMsg && (
+                <p className="text-sm mt-2 text-green-600">{cupomMsg}</p>
+              )}
             </div>
 
             {/* Resumo final */}
@@ -206,7 +250,11 @@ export default function CarrinhoPage() {
               <div className="flex justify-between text-sm text-gray-600 mt-2">
                 <span>Frete</span>
                 <span>
-                  {frete == null ? "Calcule o CEP" : frete === 0 ? "Grátis" : format(frete)}
+                  {frete == null
+                    ? "Calcule o CEP"
+                    : frete === 0
+                    ? "Grátis"
+                    : format(frete)}
                 </span>
               </div>
               <div className="flex justify-between mt-4 items-end">
@@ -220,51 +268,37 @@ export default function CarrinhoPage() {
               </div>
             </div>
 
-            {/* Formas de pagamento */}
-            <div className="bg-white p-6 rounded-2xl shadow-md">
-              <div className="mb-2">
-                <div className="text-sm text-gray-600 mb-2">Formas de pagamento</div>
-                <div className="flex gap-3 items-center">
-                  <Image src="/pagamentos/mastercard.png" width={150} height={150} alt="Mastercard"/>
-                  <Image src="/pagamentos/visa.png" width={70} height={70} alt="Visa"/>
-                  <Image src="/pagamentos/pix.png" width={60} height={60} alt="Pix"/>
-                </div>
-              </div>
-              <div className="border-t pt-4 text-sm text-gray-600">
-                <div className="mb-2">Tem alguma dúvida?</div>
-                <div>(11) 3434-6980 · Atendimento</div>
-              </div>
-            </div>
-
-            {/* Recomendações */}
+            {/* Recomendações dinâmicas */}
             <div className="bg-white p-6 rounded-2xl shadow-md">
               <h3 className="font-semibold mb-4">Recomendações</h3>
-              <div className="grid grid-cols-2 gap-3">
-                <div className="border rounded p-2 flex flex-col items-center">
-                  <div className="w-20 h-20 relative bg-gray-50 rounded overflow-hidden">
-                    <Image
-                      src="/recommend/prod1.png"
-                      alt="rec1"
-                      fill
-                      style={{ objectFit: "contain" }}
-                    />
-                  </div>
-                  <p className="text-xs mt-2 text-center">Produto 1</p>
-                  <p className="text-sm font-semibold">R$ 19,90</p>
+              {loading ? (
+                <p>Carregando recomendações...</p>
+              ) : recomendados.length > 0 ? (
+                <div className="grid grid-cols-2 gap-3">
+                  {recomendados.map((produto) => (
+                    <div key={produto.id_prod} className="border rounded p-2 flex flex-col items-center">
+                      <div className="w-20 h-20 relative bg-gray-50 rounded overflow-hidden">
+                        <Image
+                          src={produto.imagenResolved || "/placeholder.png"}
+                          alt={produto.nome}
+                          fill
+                          style={{ objectFit: "contain" }}
+                        />
+                      </div>
+                      <p className="text-xs mt-2 text-center line-clamp-2">{produto.nome}</p>
+                      <p className="text-sm font-semibold">R$ {produto.valor_venda.toFixed(2)}</p>
+                      <button
+                        onClick={() => addToCart({ ...produto, imagem: [produto.imagenResolved], quantity: 1 })}
+                        className="mt-2 text-xs bg-green-700 text-white px-3 py-1 rounded hover:bg-green-800"
+                      >
+                        Adicionar
+                      </button>
+                    </div>
+                  ))}
                 </div>
-                <div className="border rounded p-2 flex flex-col items-center">
-                  <div className="w-20 h-20 relative bg-gray-50 rounded overflow-hidden">
-                    <Image
-                      src="/recommend/prod2.png"
-                      alt="rec2"
-                      fill
-                      style={{ objectFit: "contain" }}
-                    />
-                  </div>
-                  <p className="text-xs mt-2 text-center">Produto 2</p>
-                  <p className="text-sm font-semibold">R$ 12,90</p>
-                </div>
-              </div>
+              ) : (
+                <p className="text-gray-500">Nenhum produto recomendado.</p>
+              )}
             </div>
           </aside>
         </div>
