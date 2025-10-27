@@ -1,9 +1,9 @@
-// src/pages/sucesso.jsx
 "use client";
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Image from "next/image";
+import Link from "next/link";
 
 export default function Sucesso() {
   const router = useRouter();
@@ -12,13 +12,11 @@ export default function Sucesso() {
   useEffect(() => {
     const p = JSON.parse(localStorage.getItem("ultimoPedidoFake"));
     if (!p) {
-      // Se não houver pedido salvo, volta pra página de produtos/loja
       router.push("/produtos");
       return;
     }
     setPedido(p);
 
-    // Imprime automaticamente (meio segundo para garantir carregamento)
     setTimeout(() => {
       imprimirNota(p);
     }, 500);
@@ -90,10 +88,7 @@ export default function Sucesso() {
         </div>
 
         <script>
-          // imprime automaticamente
           setTimeout(() => { window.print(); }, 500);
-
-          // helper para escapar texto (no contexto do string HTML)
           function escapeHtml(text) {
             if (!text) return "";
             return String(text)
@@ -109,7 +104,6 @@ export default function Sucesso() {
     `;
     const newWindow = window.open("", "_blank");
     if (!newWindow) {
-      // popup bloqueado — apenas abre diálogo nativo como fallback
       window.print();
       return;
     }
@@ -131,9 +125,9 @@ export default function Sucesso() {
         <p className="mb-4">A nota fiscal será impressa automaticamente. Obrigado por apoiar nosso projeto!</p>
 
         <div className="flex items-center justify-center gap-4">
-          <a href="/" className="inline-block bg-gray-900 text-white px-6 py-3 rounded-md hover:opacity-90">
+          <Link href="/" className="inline-block bg-gray-900 text-white px-6 py-3 rounded-md hover:opacity-90">
             Voltar à loja
-          </a>
+          </Link>
 
           <button
             onClick={() => imprimirNota(pedido)}
@@ -147,10 +141,6 @@ export default function Sucesso() {
   );
 }
 
-/**
- * Nota: escapeHtml usada dentro do HTML string para evitar injeção.
- * No contexto do React, usamos o util apenas dentro do template string.
- */
 function escapeHtml(text) {
   if (!text) return "";
   return String(text)
@@ -160,3 +150,4 @@ function escapeHtml(text) {
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&#039;");
 }
+  
