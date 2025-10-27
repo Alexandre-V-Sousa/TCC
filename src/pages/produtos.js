@@ -83,13 +83,13 @@ export default function ProdutosPage() {
       if (data) {
         const filtrados = filtros.preco.length > 0
           ? data.filter((p) =>
-              filtros.preco.some((fId) => {
-                const faixa = faixasPreco.find((f) => f.id === fId);
-                if (!faixa) return false;
-                if (faixa.max === null) return p.valor_venda >= faixa.min;
-                return p.valor_venda >= faixa.min && p.valor_venda <= faixa.max;
-              })
-            )
+            filtros.preco.some((fId) => {
+              const faixa = faixasPreco.find((f) => f.id === fId);
+              if (!faixa) return false;
+              if (faixa.max === null) return p.valor_venda >= faixa.min;
+              return p.valor_venda >= faixa.min && p.valor_venda <= faixa.max;
+            })
+          )
           : data;
 
         const produtosComImgs = await Promise.all(
@@ -265,4 +265,3 @@ export default function ProdutosPage() {
     </>
   );
 }
-Cowboy
