@@ -122,7 +122,7 @@ export default function Navbar() {
               )}
             </li>
             <li>
-              <Link href="/blog" className="hover:text-green-700 font-medium">
+              <Link href="https://itpetblog.com.br" className="hover:text-green-700 font-medium">
                 Blog / Dicas
               </Link>
             </li>
@@ -188,14 +188,7 @@ export default function Navbar() {
 
         {/* ÍCONES À DIREITA */}
         <div className="flex items-center space-x-6 text-black">
-          <Link href="/animais" className="relative group flex items-center cursor-pointer">
-            <div className="bg-white p-2 rounded-full shadow-md transition-transform duration-300 group-hover:scale-110">
-              <Dog className="text-black w-6 h-6" />
-            </div>
-            <span className="absolute left-1/2 -translate-x-1/2 mt-12 px-3 py-1 bg-black text-white text-sm rounded-md opacity-0 group-hover:opacity-100 transition-all duration-300">
-              Meus Pets
-            </span>
-          </Link>
+          
 
           <Link href={usuario ? "/usuario" : "/login"} className="relative group flex items-center cursor-pointer">
             <div className="bg-white p-2 rounded-full shadow-md transition-transform duration-300 group-hover:scale-110">

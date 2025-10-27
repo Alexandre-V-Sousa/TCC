@@ -172,7 +172,7 @@ export default function CarrinhoPage() {
                             <div className="font-semibold">
                               {format(
                                 (item.valor_venda || item.preco || 0) *
-                                  (item.quantity || 1)
+                                (item.quantity || 1)
                               )}
                             </div>
                           </div>
@@ -253,8 +253,8 @@ export default function CarrinhoPage() {
                   {frete == null
                     ? "Calcule o CEP"
                     : frete === 0
-                    ? "Grátis"
-                    : format(frete)}
+                      ? "Grátis"
+                      : format(frete)}
                 </span>
               </div>
               <div className="flex justify-between mt-4 items-end">
@@ -262,9 +262,13 @@ export default function CarrinhoPage() {
                   <div className="text-sm text-gray-600">Total</div>
                   <div className="text-2xl font-bold">{format(total)}</div>
                 </div>
-                <button className="bg-[#0b57a4] hover:bg-[#084e8f] text-white px-6 py-3 rounded-lg">
-                  Ir para pagamento
-                </button>
+
+                <Link href="/finalPag">
+                  <button className="bg-[#0b57a4] hover:bg-[#084e8f] text-white px-6 py-3 rounded-lg">
+                    Ir para pagamento
+                  </button>
+                </Link>
+
               </div>
             </div>
 

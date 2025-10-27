@@ -12,7 +12,10 @@
     "@supabase/supabase-js": "^2.57.4",
     "framer-motion": "^12.23.12",
     "lucide-react": "^0.542.0",
+    "mercadopago": "^1.5.0",
     "next": "15.5.2",
+    "qrcode": "^1.5.4",
+    "qrcode.react": "^4.2.0",
     "react": "19.1.0",
     "react-dom": "19.1.0"
   },

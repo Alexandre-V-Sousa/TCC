@@ -17,23 +17,42 @@ export default function Login() {
       return;
     }
 
-    const { data: usuario, error: loginError } = await supabase
-      .from("usuarios")
-      .select("*")
-      .eq("email", email)
-      .eq("senha", password)
-      .single();
+    try {
+      // Busca o usuário ignorando maiúsculas/minúsculas no email
+      const { data: usuario, error: fetchError } = await supabase
+        .from("usuarios")
+        .select("*")
+        .ilike("email", email.trim())
+        .maybeSingle(); // ✅ não quebra se não encontrar
 
-    if (loginError || !usuario) {
-      setError("Email ou senha incorretos!");
-      return;
+      if (fetchError) {
+        console.error("Erro Supabase:", fetchError);
+        setError("Erro ao buscar usuário!");
+        return;
+      }
+
+      if (!usuario) {
+        setError("Email ou senha incorretos!");
+        return;
+      }
+
+      // Comparar senha de forma tolerante a espaços e maiúsculas/minúsculas
+      const senhaDigitada = password.trim().toLowerCase();
+      const senhaBanco = usuario.senha.trim().toLowerCase();
+
+      if (senhaDigitada !== senhaBanco) {
+        setError("Email ou senha incorretos!");
+        return;
+      }
+
+      // Login bem-sucedido
+      localStorage.setItem("usuarioLogado", JSON.stringify(usuario));
+      alert(`Logado com sucesso!\nBem-vindo, ${usuario.nome}`);
+      router.push("/usuario");
+    } catch (err) {
+      console.error("Erro inesperado:", err);
+      setError("Ocorreu um erro no login.");
     }
-
-    // Salva o usuário no localStorage para persistir a sessão
-    localStorage.setItem("usuarioLogado", JSON.stringify(usuario));
-
-    alert(`Logado com sucesso!\nBem-vindo, ${usuario.nome}`);
-    router.push("/usuario"); // Redireciona para a tela do usuário
   };
 
   const inputVariant = {
@@ -95,7 +114,7 @@ export default function Login() {
 
           <motion.input
             type="email"
-            placeholder="Email ou CPF/CNPJ"
+            placeholder="Email"
             value={email}
             onChange={(e) => setEmail(e.target.value)}
             variants={inputVariant}
@@ -104,6 +123,7 @@ export default function Login() {
             animate="visible"
             className="w-full px-5 py-3 rounded-full border border-black mb-4 focus:outline-none focus:ring-2 focus:ring-green-500 text-black transition-shadow duration-300 shadow-sm focus:shadow-lg"
           />
+
           <motion.input
             type="password"
             placeholder="Senha"

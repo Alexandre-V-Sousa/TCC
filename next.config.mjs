@@ -1,7 +1,8 @@
-/** @type {import('next').NextConfig} */
 const nextConfig = {
-  output: 'export',            // exporta como site estático
-  images: { unoptimized: true } // desativa otimização de imagens
+  reactStrictMode: true,
+  images: {
+    domains: ["kdqjnyhhxbafdhgwpzhq.supabase.co"],
+  },
 };
 
 export default nextConfig;

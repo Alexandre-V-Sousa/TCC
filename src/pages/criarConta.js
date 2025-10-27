@@ -4,7 +4,6 @@ import { useRouter } from "next/router";
 import Image from "next/image";
 import { motion, AnimatePresence } from "framer-motion";
 import { supabase } from "../lib/supabaseClient";
-import Rodape from "../componentes/Rodape";
 
 export default function Signup() {
   const router = useRouter();
@@ -16,6 +15,8 @@ export default function Signup() {
     logradouro: "",
     numero: "",
     bairro: "",
+    cidade: "",   // Adicionado
+    CEP: "",      // Adicionado, maiúsculo conforme banco
     email: "",
     senha: "",
     confirmarSenha: "",
@@ -27,14 +28,15 @@ export default function Signup() {
     setFormData({ ...formData, [e.target.name]: e.target.value });
 
   const handleSignup = async () => {
-    // Validação básica
     if (
       !formData.nome ||
       !formData.cpf ||
       !formData.data_nasc ||
       !formData.email ||
       !formData.senha ||
-      !formData.confirmarSenha
+      !formData.confirmarSenha ||
+      !formData.cidade ||
+      !formData.CEP
     ) {
       setError("Preencha todos os campos obrigatórios!");
       return;
@@ -67,6 +69,8 @@ export default function Signup() {
         logradouro: formData.logradouro,
         numero: formData.numero,
         bairro: formData.bairro,
+        cidade: formData.cidade,   // enviado para o banco
+        CEP: formData.CEP,         // enviado para o banco
         email: formData.email,
         senha: formData.senha, // ⚠️ Para produção, use hash
       },
@@ -104,35 +108,18 @@ export default function Signup() {
         transition={{ duration: 0.5 }}
         className="bg-white rounded-3xl shadow-2xl flex flex-col md:flex-row w-full max-w-5xl overflow-hidden text-black"
       >
-        {/* Lado esquerdo: Formulário */}
         <div className="md:w-2/3 p-10 flex flex-col justify-center text-black">
-          <motion.div
-            initial={{ scale: 0.8, opacity: 0 }}
-            animate={{ scale: 1, opacity: 1 }}
-            transition={{ duration: 0.5 }}
-            className="flex justify-center mb-6"
-          >
+          <motion.div className="flex justify-center mb-6">
             <Image src="/logo.png" alt="Logo" width={100} height={100} />
           </motion.div>
 
-          <motion.h2
-            initial={{ x: -30, opacity: 0 }}
-            animate={{ x: 0, opacity: 1 }}
-            transition={{ delay: 0.2, duration: 0.5 }}
-            className="text-3xl font-bold text-green-700 mb-6 text-center md:text-left"
-          >
+          <motion.h2 className="text-3xl font-bold text-green-700 mb-6 text-center md:text-left">
             Crie sua conta
           </motion.h2>
 
           <AnimatePresence>
             {error && (
-              <motion.p
-                initial={{ opacity: 0, y: -10 }}
-                animate={{ opacity: 1, y: 0 }}
-                exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
-                className="text-red-500 mb-4 text-center md:text-left text-sm text-black"
-              >
+              <motion.p className="text-red-500 mb-4 text-center md:text-left text-sm text-black">
                 {error}
               </motion.p>
             )}
@@ -146,6 +133,8 @@ export default function Signup() {
             { name: "logradouro", placeholder: "Logradouro", type: "text" },
             { name: "numero", placeholder: "Número", type: "text" },
             { name: "bairro", placeholder: "Bairro", type: "text" },
+            { name: "cidade", placeholder: "Cidade", type: "text" },
+            { name: "CEP", placeholder: "CEP", type: "text" },
             { name: "email", placeholder: "E-mail", type: "email" },
             { name: "senha", placeholder: "Senha", type: "password" },
             { name: "confirmarSenha", placeholder: "Confirmar senha", type: "password" },
@@ -169,23 +158,13 @@ export default function Signup() {
             onClick={handleSignup}
             whileHover={{ scale: 1.05 }}
             whileTap={{ scale: 0.95 }}
-            variants={inputVariant}
-            custom={11}
-            initial="hidden"
-            animate="visible"
             className="w-full bg-green-700 hover:bg-green-800 text-white py-3 rounded-full font-bold transition-all shadow-md"
           >
             Criar conta
           </motion.button>
         </div>
 
-        {/* Lado direito: Benefícios */}
-        <motion.div
-          initial="hidden"
-          animate="visible"
-          variants={sideVariant}
-          className="md:w-1/3 bg-green-50 p-10 flex flex-col justify-center text-center md:text-left"
-        >
+        <motion.div className="md:w-1/3 bg-green-50 p-10 flex flex-col justify-center text-center md:text-left">
           <h2 className="text-2xl font-bold text-green-800 mb-4">Já tem uma conta?</h2>
           <p className="text-gray-700 mb-6">
             Acesse sua conta e continue aproveitando nossas ofertas exclusivas e promoções!
@@ -201,7 +180,5 @@ export default function Signup() {
         </motion.div>
       </motion.div>
     </motion.div>
-    
   );
-    
 }

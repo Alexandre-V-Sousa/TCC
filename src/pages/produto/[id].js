@@ -4,6 +4,7 @@ import { useCart } from "../../context/CartContext";
 import { motion } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
 import Navbar from "../../componentes/Navbar";
+import Rodape from "../../componentes/Rodape";
 import Image from "next/image";
 import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
@@ -33,12 +34,10 @@ export default function ProdutoPage() {
         console.error("Erro ao buscar produto:", error);
         setProduto(null);
       } else {
-        setProduto({
-          ...data,
-          preco: data.valor_venda || 0,
-          imagem: data.imagem ? [data.imagem] : [],
-          categoria: data.categoria || "Sem categoria",
-        });
+        // Resolver imagem
+        let imagens = [];
+        if (data.imagem) imagens.push(data.imagem);
+        setProduto({ ...data, preco: data.valor_venda || 0, imagens, categoria: data.categoria || "Sem categoria" });
       }
     };
 
@@ -50,14 +49,13 @@ export default function ProdutoPage() {
         .limit(10);
 
       if (!error && data) {
-        setRelacionados(
-          data.map((p) => ({
-            ...p,
-            preco: p.valor_venda || 0,
-            imagem: p.imagem ? [p.imagem] : [],
-            categoria: p.categoria || "Sem categoria",
-          }))
-        );
+        const list = data.map((p) => ({
+          ...p,
+          preco: p.valor_venda || 0,
+          imagens: p.imagem ? [p.imagem] : [],
+          categoria: p.categoria || "Sem categoria",
+        }));
+        setRelacionados(list);
       }
     };
 
@@ -79,7 +77,7 @@ export default function ProdutoPage() {
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16">
           {/* Galeria de imagens */}
           <div className="lg:col-span-5 space-y-6">
-            {produto.imagem.length > 0 && (
+            {produto.imagens.length > 0 && (
               <motion.div
                 key={imagemAtiva}
                 initial={{ opacity: 0, scale: 0.95 }}
@@ -88,7 +86,7 @@ export default function ProdutoPage() {
                 className="relative w-full h-96 bg-white rounded-3xl shadow-lg overflow-hidden"
               >
                 <Image
-                  src={produto.imagem[imagemAtiva]}
+                  src={produto.imagens[imagemAtiva]}
                   alt={produto.nome}
                   fill
                   style={{ objectFit: "contain" }}
@@ -97,7 +95,7 @@ export default function ProdutoPage() {
             )}
 
             <div className="flex gap-4 overflow-x-auto pb-2">
-              {produto.imagem.map((img, i) => (
+              {produto.imagens.map((img, i) => (
                 <motion.div
                   key={i}
                   whileHover={{ scale: 1.05 }}
@@ -129,9 +127,7 @@ export default function ProdutoPage() {
               {produto.nome}
             </motion.h1>
 
-            <p className="text-sm text-gray-500 mb-6">
-              Categoria: {produto.categoria} • Código: {produto.cod_barras}
-            </p>
+          
 
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
@@ -168,6 +164,7 @@ export default function ProdutoPage() {
               <Plus size={22} className="mr-2" /> Adicionar ao Carrinho
             </motion.button>
 
+            {/* Descrição */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
@@ -196,9 +193,9 @@ export default function ProdutoPage() {
                   className="snap-start bg-white rounded-2xl shadow-lg p-4 min-w-[220px] cursor-pointer"
                   onClick={() => router.push(`/produto/${rel.id_prod}`)}
                 >
-                  {rel.imagem.length > 0 && (
+                  {rel.imagens.length > 0 && (
                     <Image
-                      src={rel.imagem[0]}
+                      src={rel.imagens[0]}
                       alt={rel.nome}
                       width={160}
                       height={160}
@@ -216,7 +213,9 @@ export default function ProdutoPage() {
             </div>
           </div>
         </section>
+        <Rodape />
       </main>
+      
     </>
   );
 }
