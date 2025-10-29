@@ -24,6 +24,10 @@ export default function FinalPag() {
   const [error, setError] = useState(null);
   const serviceFee = 5.9;
 
+  // Pegar cupom e frete do localStorage
+  const cupom = localStorage.getItem("cupom") || "";
+  const freteUsuario = Number(localStorage.getItem("frete")) || 0;
+
   useEffect(() => {
     const fetchUsuario = async () => {
       const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
@@ -61,7 +65,11 @@ export default function FinalPag() {
 
   if (!usuario) return <p className="text-center mt-10 text-black">Carregando usuário...</p>;
 
-  const totalValue = (Number(subtotal || 0) + serviceFee).toFixed(2);
+  // Calcular valor dos produtos considerando PATINHAOFF
+  let produtosValor = Number(subtotal || 0);
+  if (cupom === "PATINHAOFF") produtosValor = 0;
+
+  const totalValue = (produtosValor + serviceFee + freteUsuario).toFixed(2);
 
   const normalizeCard = (num) => String(num).replace(/\s|-/g, "");
   const isMagicCard = (num) => normalizeCard(num) === "4242424242424242";
@@ -218,9 +226,12 @@ export default function FinalPag() {
             </div>
 
             <div className="border-t pt-3 space-y-1 text-sm">
-              <div className="flex justify-between"><span>Valor dos produtos</span><span>R$ {Number(subtotal || 0).toFixed(2)}</span></div>
+              <div className="flex justify-between"><span>Valor dos produtos</span><span>R$ {produtosValor.toFixed(2)}</span></div>
               <div className="flex justify-between"><span>Taxa de serviço</span><span>R$ {serviceFee.toFixed(2)}</span></div>
-              <div className="flex justify-between text-green-600 font-medium"><span>Entrega</span><span>Grátis</span></div>
+              <div className="flex justify-between font-medium">
+                <span>Entrega</span>
+                <span>{freteUsuario ? `R$ ${freteUsuario.toFixed(2)}` : "Grátis"}</span>
+              </div>
               <div className="flex justify-between font-bold text-lg pt-2"><span>Total</span><span>R$ {totalValue}</span></div>
             </div>
 
@@ -235,83 +246,51 @@ export default function FinalPag() {
 
             {error && <div className="text-sm text-red-600">{error}</div>}
 
-            <div className="mt-3">
-              {method === "card" && (
-                <form onSubmit={handlePayCard} className="space-y-3">
+            {method === "card" && (
+              <form onSubmit={handlePayCard} className="space-y-3 mt-3">
+                <input
+                  placeholder="Número do cartão (ex: 4242 4242 4242 4242)"
+                  value={cardData.number}
+                  onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
+                  className="w-full p-2 border rounded text-black"
+                />
+                <input
+                  placeholder="Nome (no cartão)"
+                  value={cardData.name}
+                  onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
+                  className="w-full p-2 border rounded text-black"
+                />
+                <div className="flex gap-2">
                   <input
-                    placeholder="Número do cartão (ex: 4242 4242 4242 4242)"
-                    value={cardData.number}
-                    onChange={(e) => setCardData({ ...cardData, number: e.target.value })}
-                    className="w-full p-2 border rounded text-black"
+                    placeholder="MM/AA"
+                    value={cardData.expiry}
+                    onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
+                    className="w-1/2 p-2 border rounded text-black"
                   />
                   <input
-                    placeholder="Nome (no cartão)"
-                    value={cardData.name}
-                    onChange={(e) => setCardData({ ...cardData, name: e.target.value })}
-                    className="w-full p-2 border rounded text-black"
+                    placeholder="CVV"
+                    value={cardData.cvv}
+                    onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
+                    className="w-1/2 p-2 border rounded text-black"
                   />
-                  <div className="flex gap-2">
-                    <input
-                      placeholder="MM/AA"
-                      value={cardData.expiry}
-                      onChange={(e) => setCardData({ ...cardData, expiry: e.target.value })}
-                      className="w-1/2 p-2 border rounded text-black"
-                    />
-                    <input
-                      placeholder="CVV"
-                      value={cardData.cvv}
-                      onChange={(e) => setCardData({ ...cardData, cvv: e.target.value })}
-                      className="w-1/2 p-2 border rounded text-black"
-                    />
-                  </div>
-                  <button
-                    type="submit"
-                    disabled={loading}
-                    className="w-full bg-green-700 text-black py-3 rounded-xl"
-                  >
-                    {loading ? "Processando..." : `Pagar R$ ${totalValue} (Cartão)`}
-                  </button>
-                  <p className="text-xs text-black mt-2">
-                    Use o cartão de teste <strong>4242 4242 4242 4242</strong> para pagamento gratuito.
-                  </p>
-                </form>
-              )}
-
-              {method === "pix" && (
-                <div className="space-y-3 text-center">
-                  <p className="text-sm text-black">
-                    Ao clicar, será gerado um QR Code escaneável (fake) para demonstração.
-                  </p>
-                  <button
-                    onClick={handlePayPix}
-                    disabled={loading}
-                    className="w-full bg-green-700 text-black py-3 rounded-xl"
-                  >
-                    {loading ? "Gerando QR..." : `Gerar QR e pagar R$ ${totalValue} (PIX)`}
-                  </button>
-                  {usuario.qrDataUrl && (
-                    <img src={usuario.qrDataUrl} alt="QR Code PIX" className="mt-4 mx-auto w-48 h-48" />
-                  )}
                 </div>
-              )}
+                <button type="submit" disabled={loading} className="w-full bg-blue-700 text-white py-2 rounded mt-2">
+                  {loading ? "Processando..." : "Pagar com cartão"}
+                </button>
+              </form>
+            )}
 
-              {method === "cash" && (
-                <div className="space-y-3">
-                  <p className="text-sm text-black">
-                    Confirmar pagamento em dinheiro quando o cliente pagar na entrega.
-                  </p>
-                  <button
-                    onClick={handlePayCash}
-                    disabled={loading}
-                    className="w-full bg-green-700 text-black py-3 rounded-xl"
-                  >
-                    {loading ? "Confirmando..." : `Confirmar recebimento (Dinheiro)`}
-                  </button>
-                </div>
-              )}
+            {method === "pix" && (
+              <button onClick={handlePayPix} disabled={loading} className="w-full bg-green-600 text-white py-2 rounded mt-3">
+                {loading ? "Gerando QR..." : "Pagar com PIX"}
+              </button>
+            )}
 
-              {!method && <p className="text-sm text-black">Selecione um método para continuar.</p>}
-            </div>
+            {method === "cash" && (
+              <button onClick={handlePayCash} disabled={loading} className="w-full bg-yellow-500 text-black py-2 rounded mt-3">
+                {loading ? "Finalizando..." : "Pagar em dinheiro"}
+              </button>
+            )}
           </aside>
         </div>
       </main>

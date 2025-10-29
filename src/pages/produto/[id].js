@@ -19,6 +19,63 @@ export default function ProdutoPage() {
   const [imagemAtiva, setImagemAtiva] = useState(0);
   const [quantidade, setQuantidade] = useState(1);
 
+  // Ajuste aqui caso seu bucket tenha outro nome (sem encoding)
+  const SUPABASE_BASE = "https://kdqjnyhhxbafdhgwpzhq.supabase.co";
+  const DEFAULT_BUCKET = "imagem dos produtos"; // nome legível do bucket
+  // path encode (caso o bucket tenha espaço)
+  const DEFAULT_BUCKET_ENCODED = encodeURIComponent(DEFAULT_BUCKET);
+
+  const placeholder = "/placeholder.png"; // coloque um placeholder na pasta public
+
+  // Função robusta para normalizar/validar o campo de imagem
+  const corrigirImagem = (raw, contexto = {}) => {
+    if (!raw && raw !== "") return placeholder;
+
+    // se for array, pega primeiro item
+    if (Array.isArray(raw)) raw = raw[0];
+
+    // se for objeto, tenta extrair uma propriedade comum, senão fallback
+    if (typeof raw === "object") {
+      console.warn("Campo imagem é objeto inesperado", contexto);
+      return placeholder;
+    }
+
+    let url = String(raw).trim();
+
+    // se for lista separada por vírgula -> pega o primeiro não-vazio
+    if (url.includes(",")) {
+      const parts = url.split(",").map((s) => s.trim()).filter(Boolean);
+      url = parts.length > 0 ? parts[0] : url;
+    }
+
+    // valores óbvios inválidos
+    if (url.length < 5) {
+      console.warn("Imagem inválida (curta):", { valor: url, contexto });
+      return placeholder;
+    }
+
+    // já é url absoluta?
+    if (url.startsWith("http://") || url.startsWith("https://")) {
+      return url;
+    }
+
+    // se começa com "/storage" ou "storage/v1" ou contém "object/public", concatena base
+    if (url.startsWith("/storage") || url.startsWith("storage") || url.includes("/object/public/")) {
+      // remover barra duplicada
+      const cleaned = url.startsWith("/") ? url : `/${url}`;
+      return `${SUPABASE_BASE}${cleaned}`;
+    }
+
+    // se for um caminho relativo do tipo "bucket/foto.jpg"
+    if (url.includes("/")) {
+      // pode já ter a pasta "public/..." ou "produto/..."
+      return `${SUPABASE_BASE}/storage/v1/object/public/${url}`;
+    }
+
+    // provavelmente é só o nome do arquivo -> monta com bucket padrão
+    return `${SUPABASE_BASE}/storage/v1/object/public/${DEFAULT_BUCKET_ENCODED}/${encodeURIComponent(url)}`;
+  };
+
   useEffect(() => {
     if (!router.isReady) return;
     const idNum = Number(id);
@@ -34,10 +91,26 @@ export default function ProdutoPage() {
         console.error("Erro ao buscar produto:", error);
         setProduto(null);
       } else {
-        // Resolver imagem
+        // Normaliza imagem(s)
         let imagens = [];
-        if (data.imagem) imagens.push(data.imagem);
-        setProduto({ ...data, preco: data.valor_venda || 0, imagens, categoria: data.categoria || "Sem categoria" });
+        if (data.imagem) {
+          // tenta detectar múltiplas imagens em CSV
+          if (typeof data.imagem === "string" && data.imagem.includes(",")) {
+            const parts = data.imagem.split(",").map((s) => s.trim()).filter(Boolean);
+            imagens = parts.map((p) => corrigirImagem(p, { id_prod: data.id_prod }));
+          } else {
+            imagens = [corrigirImagem(data.imagem, { id_prod: data.id_prod })];
+          }
+        } else {
+          imagens = [placeholder];
+        }
+
+        setProduto({
+          ...data,
+          preco: data.valor_venda || 0,
+          imagens,
+          categoria: data.categoria || "Sem categoria",
+        });
       }
     };
 
@@ -49,13 +122,28 @@ export default function ProdutoPage() {
         .limit(10);
 
       if (!error && data) {
-        const list = data.map((p) => ({
-          ...p,
-          preco: p.valor_venda || 0,
-          imagens: p.imagem ? [p.imagem] : [],
-          categoria: p.categoria || "Sem categoria",
-        }));
+        const list = data.map((p) => {
+          let imgs = [];
+          if (p.imagem) {
+            if (typeof p.imagem === "string" && p.imagem.includes(",")) {
+              imgs = p.imagem.split(",").map((s) => s.trim()).filter(Boolean).map((it) => corrigirImagem(it, { id_prod: p.id_prod }));
+            } else {
+              imgs = [corrigirImagem(p.imagem, { id_prod: p.id_prod })];
+            }
+          } else {
+            imgs = [placeholder];
+          }
+
+          return {
+            ...p,
+            preco: p.valor_venda || 0,
+            imagens: imgs,
+            categoria: p.categoria || "Sem categoria",
+          };
+        });
         setRelacionados(list);
+      } else if (error) {
+        console.error("Erro ao buscar relacionados:", error);
       }
     };
 
@@ -127,8 +215,6 @@ export default function ProdutoPage() {
               {produto.nome}
             </motion.h1>
 
-          
-
             <motion.div
               initial={{ scale: 0.9, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
@@ -174,7 +260,9 @@ export default function ProdutoPage() {
               <h2 className="text-xl font-semibold mb-4 text-green-700">
                 Descrição
               </h2>
-              <p className="text-gray-700 leading-relaxed">{produto.descricao}</p>
+              <p className="text-gray-700 leading-relaxed">
+                {produto.descricao}
+              </p>
             </motion.div>
           </div>
         </div>
@@ -215,7 +303,6 @@ export default function ProdutoPage() {
         </section>
         <Rodape />
       </main>
-      
     </>
   );
 }

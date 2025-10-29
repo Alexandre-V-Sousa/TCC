@@ -1,4 +1,3 @@
-// CarrinhoPage.js
 "use client";
 
 import Image from "next/image";
@@ -12,15 +11,19 @@ import { supabase } from "../../lib/supabaseClient";
 export default function CarrinhoPage() {
   const { cartItems, updateQuantity, removeItem, subtotal, clearCart, addToCart } = useCart();
   const [cep, setCep] = useState("");
-  const [cupom, setCupom] = useState("");
-  const [cupomMsg, setCupomMsg] = useState(null);
   const [frete, setFrete] = useState(null);
   const [recomendados, setRecomendados] = useState([]);
   const [loading, setLoading] = useState(true);
 
+  // Cupom
+  const [cupomInput, setCupomInput] = useState("");
+  const [cupomAplicado, setCupomAplicado] = useState("");
+  const [mensagemCupom, setMensagemCupom] = useState("");
+
   const format = (v) =>
     v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 
+  // Aplicar frete pelo CEP
   const applyCep = () => {
     if (!cep.match(/^\d{5}-?\d{3}$/)) {
       setFrete(null);
@@ -29,20 +32,35 @@ export default function CarrinhoPage() {
     }
     const n = Number(cep.replace(/\D/g, "").slice(0, 2));
     setFrete(n % 2 === 0 ? 0 : 12.5);
+
+    // salvar frete no localStorage para usar na página de pagamento
+    localStorage.setItem("frete", n % 2 === 0 ? 0 : 12.5);
   };
 
-  const applyCupom = () => {
-    if (cupom.trim().toUpperCase() === "FIX10") {
-      setCupomMsg("Cupom aplicado: 10% off");
+  // Aplicar cupom
+  const aplicarCupom = () => {
+    if (cupomInput.trim().toUpperCase() === "PATINHAOFF") {
+      setCupomAplicado("PATINHAOFF");
+      setMensagemCupom("Cupom aplicado com sucesso!");
+      localStorage.setItem("cupom", "PATINHAOFF");
     } else {
-      setCupomMsg("Cupom inválido");
+      setMensagemCupom("Cupom inválido!");
     }
+
+    // Limpar mensagem e cupom após 3 segundos
+    setTimeout(() => {
+      setMensagemCupom("");
+      setCupomAplicado("");
+      setCupomInput("");
+      localStorage.removeItem("cupom");
+    }, 3000);
   };
 
+  // Calcular total considerando cupom e frete
   const total = (() => {
     let base = subtotal;
-    if (cupom.trim().toUpperCase() === "FIX10") base *= 0.9;
-    if (frete) base += frete;
+    if (cupomAplicado === "PATINHAOFF") base = 0;
+    if (frete != null) base += frete;
     return base;
   })();
 
@@ -100,8 +118,7 @@ export default function CarrinhoPage() {
             <h1 className="text-2xl font-bold mb-4">Carrinho</h1>
             {cartItems.length === 0 ? (
               <div className="py-20 text-center text-gray-500">
-                Sua sacola está vazia.{" "}
-                <Link href="/">Voltar ao catálogo</Link>
+                Sua sacola está vazia. <Link href="/">Voltar ao catálogo</Link>
               </div>
             ) : (
               <>
@@ -124,9 +141,7 @@ export default function CarrinhoPage() {
                       <div className="flex-1 flex flex-col justify-between">
                         <div>
                           <p className="font-medium text-gray-800">{item.nome}</p>
-                          {item.variant && (
-                            <p className="text-sm text-gray-500">{item.variant}</p>
-                          )}
+                          {item.variant && <p className="text-sm text-gray-500">{item.variant}</p>}
                           <p className="mt-2 text-sm text-gray-600">
                             R$ {(item.valor_venda || item.preco || 0).toFixed(2)}
                           </p>
@@ -135,11 +150,7 @@ export default function CarrinhoPage() {
                           <div className="flex items-center gap-3">
                             <button
                               onClick={() =>
-                                updateQuantity(
-                                  item.id_prod,
-                                  item.nome,
-                                  (item.quantity || 1) - 1
-                                )
+                                updateQuantity(item.id_prod, item.nome, (item.quantity || 1) - 1)
                               }
                               className="border rounded px-3 py-2 hover:bg-gray-100"
                             >
@@ -150,11 +161,7 @@ export default function CarrinhoPage() {
                             </div>
                             <button
                               onClick={() =>
-                                updateQuantity(
-                                  item.id_prod,
-                                  item.nome,
-                                  (item.quantity || 1) + 1
-                                )
+                                updateQuantity(item.id_prod, item.nome, (item.quantity || 1) + 1)
                               }
                               className="border rounded px-3 py-2 hover:bg-gray-100"
                             >
@@ -170,10 +177,7 @@ export default function CarrinhoPage() {
                           <div className="text-right">
                             <div className="text-sm text-gray-500">Total</div>
                             <div className="font-semibold">
-                              {format(
-                                (item.valor_venda || item.preco || 0) *
-                                (item.quantity || 1)
-                              )}
+                              {format((item.valor_venda || item.preco || 0) * (item.quantity || 1))}
                             </div>
                           </div>
                         </div>
@@ -182,10 +186,7 @@ export default function CarrinhoPage() {
                   ))}
                 </div>
                 <div className="mt-6 flex items-center justify-between">
-                  <button
-                    onClick={clearCart}
-                    className="text-sm text-blue-600 hover:underline"
-                  >
+                  <button onClick={clearCart} className="text-sm text-blue-600 hover:underline">
                     Limpar sacola
                   </button>
                   <div className="text-sm text-gray-600">{cartItems.length} itens</div>
@@ -194,13 +195,11 @@ export default function CarrinhoPage() {
             )}
           </section>
 
-          {/* Resumo + Recomendações */}
+          {/* Resumo + CEP + Cupom + Recomendações */}
           <aside className="lg:col-span-4 space-y-6">
             {/* CEP */}
             <div className="bg-white p-6 rounded-2xl shadow-md">
-              <label className="block text-sm font-medium text-gray-700">
-                Qual o CEP?
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Qual o CEP?</label>
               <div className="flex gap-2 mt-2">
                 <input
                   value={cep}
@@ -208,10 +207,7 @@ export default function CarrinhoPage() {
                   placeholder="00000-000"
                   className="flex-1 border rounded px-3 py-2 focus:outline-none"
                 />
-                <button
-                  onClick={applyCep}
-                  className="bg-gray-800 text-white px-4 rounded"
-                >
+                <button onClick={applyCep} className="bg-gray-800 text-white px-4 rounded">
                   Aplicar
                 </button>
               </div>
@@ -219,25 +215,22 @@ export default function CarrinhoPage() {
 
             {/* Cupom */}
             <div className="bg-white p-6 rounded-2xl shadow-md">
-              <label className="block text-sm font-medium text-gray-700">
-                Cupom de desconto
-              </label>
+              <label className="block text-sm font-medium text-gray-700">Cupom de desconto</label>
               <div className="flex gap-2 mt-2">
                 <input
-                  value={cupom}
-                  onChange={(e) => setCupom(e.target.value)}
+                  value={cupomInput}
+                  onChange={(e) => setCupomInput(e.target.value)}
                   placeholder="Digite seu cupom"
                   className="flex-1 border rounded px-3 py-2 focus:outline-none"
                 />
-                <button
-                  onClick={applyCupom}
-                  className="bg-gray-800 text-white px-4 rounded"
-                >
+                <button onClick={aplicarCupom} className="bg-gray-800 text-white px-4 rounded">
                   Aplicar
                 </button>
               </div>
-              {cupomMsg && (
-                <p className="text-sm mt-2 text-green-600">{cupomMsg}</p>
+              {mensagemCupom && (
+                <p className={`text-sm mt-2 ${mensagemCupom.includes("sucesso") ? "text-green-600" : "text-red-600"}`}>
+                  {mensagemCupom}
+                </p>
               )}
             </div>
 
@@ -249,13 +242,7 @@ export default function CarrinhoPage() {
               </div>
               <div className="flex justify-between text-sm text-gray-600 mt-2">
                 <span>Frete</span>
-                <span>
-                  {frete == null
-                    ? "Calcule o CEP"
-                    : frete === 0
-                      ? "Grátis"
-                      : format(frete)}
-                </span>
+                <span>{frete == null ? "Calcule o CEP" : frete === 0 ? "Grátis" : format(frete)}</span>
               </div>
               <div className="flex justify-between mt-4 items-end">
                 <div>
@@ -268,7 +255,6 @@ export default function CarrinhoPage() {
                     Ir para pagamento
                   </button>
                 </Link>
-
               </div>
             </div>
 

@@ -52,6 +52,7 @@ export default function ProdutosPage() {
     setSidebarOpen(true);
   };
 
+  // ------------------ BUSCAR CATEGORIAS E TIPOS ------------------
   useEffect(() => {
     async function fetchFiltros() {
       const { data: catData, error: catErr } = await supabase
@@ -69,6 +70,18 @@ export default function ProdutosPage() {
     fetchFiltros();
   }, []);
 
+  // ------------------ APLICAR FILTRO DE TIPO VIA QUERY ------------------
+  useEffect(() => {
+    const tipoQuery = router.query.tipo;
+    if (tipoQuery && tipos.length > 0) {
+      const tipoObj = tipos.find((t) => t.nome_tipo === tipoQuery);
+      if (tipoObj) {
+        setFiltros((prev) => ({ ...prev, tipo: [tipoObj.id] }));
+      }
+    }
+  }, [router.query.tipo, tipos]);
+
+  // ------------------ BUSCAR PRODUTOS ------------------
   useEffect(() => {
     async function fetchProdutos() {
       setLoading(true);
@@ -95,7 +108,7 @@ export default function ProdutosPage() {
         const produtosComImgs = await Promise.all(
           filtrados.map(async (p) => {
             const imgField = p.imagen ?? p.imagem ?? "";
-            let resolved = "/placeholder.png"; // fallback padrão
+            let resolved = "/placeholder.png";
 
             try {
               if (typeof imgField === "string" && imgField.startsWith("http")) {
@@ -110,7 +123,6 @@ export default function ProdutosPage() {
               resolved = "/placeholder.png";
             }
 
-            // garante que o src seja sempre válido
             if (!resolved || resolved === "h") resolved = "/placeholder.png";
 
             return { ...p, imagenResolved: resolved };
