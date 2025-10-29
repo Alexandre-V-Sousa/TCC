@@ -22,13 +22,22 @@ export default function FinalPag() {
   const [loading, setLoading] = useState(false);
   const [cardData, setCardData] = useState({ number: "", name: "", expiry: "", cvv: "" });
   const [error, setError] = useState(null);
+
+  // Estado seguro para cupom e frete
+  const [cupom, setCupom] = useState("");
+  const [freteUsuario, setFreteUsuario] = useState(0);
+
   const serviceFee = 5.9;
 
-  // Pegar cupom e frete do localStorage
-  const cupom = localStorage.getItem("cupom") || "";
-  const freteUsuario = Number(localStorage.getItem("frete")) || 0;
-
   useEffect(() => {
+    if (typeof window === "undefined") return; // só rodar no cliente
+
+    // Pegar cupom e frete
+    const c = localStorage.getItem("cupom") || "";
+    const f = Number(localStorage.getItem("frete")) || 0;
+    setCupom(c);
+    setFreteUsuario(f);
+
     const fetchUsuario = async () => {
       const usuarioLogado = JSON.parse(localStorage.getItem("usuarioLogado"));
       if (!usuarioLogado) {
