@@ -10,6 +10,7 @@ import { supabase } from "../../lib/supabaseClient";
 
 export default function CarrinhoPage() {
   const { cartItems, updateQuantity, removeItem, subtotal, clearCart, addToCart } = useCart();
+
   const [cep, setCep] = useState("");
   const [frete, setFrete] = useState(null);
   const [recomendados, setRecomendados] = useState([]);
@@ -17,8 +18,23 @@ export default function CarrinhoPage() {
 
   // Cupom
   const [cupomInput, setCupomInput] = useState("");
-  const [cupomAplicado, setCupomAplicado] = useState(localStorage.getItem("cupom") || "");
+  const [cupomAplicado, setCupomAplicado] = useState("");
   const [mensagemCupom, setMensagemCupom] = useState("");
+
+  // Estado para evitar acesso a localStorage no server
+  const [isClient, setIsClient] = useState(false);
+
+  useEffect(() => {
+    setIsClient(true);
+
+    // Inicializa cupom do localStorage
+    const cupom = localStorage.getItem("cupom") || "";
+    setCupomAplicado(cupom);
+
+    // Inicializa frete do localStorage
+    const freteLocal = localStorage.getItem("frete");
+    if (freteLocal) setFrete(Number(freteLocal));
+  }, []);
 
   const format = (v) =>
     v.toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
@@ -46,7 +62,6 @@ export default function CarrinhoPage() {
       setMensagemCupom("Cupom inválido!");
     }
 
-    // Limpar apenas a mensagem, sem remover o cupom
     setTimeout(() => {
       setMensagemCupom("");
       setCupomInput("");
@@ -104,6 +119,9 @@ export default function CarrinhoPage() {
 
     fetchRecomendados();
   }, []);
+
+  // Proteção para não acessar localStorage no server
+  if (!isClient) return null;
 
   return (
     <>
