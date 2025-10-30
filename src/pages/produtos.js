@@ -29,12 +29,13 @@ export default function ProdutosPage() {
   const [produtos, setProdutos] = useState([]);
   const [categorias, setCategorias] = useState([]);
   const [tipos, setTipos] = useState([]);
+  const [loading, setLoading] = useState(true);
+
   const [filtros, setFiltros] = useState({
     categoria: categoriaParam ? [urlToDBMap[categoriaParam]] : [],
     tipo: [],
     preco: [],
   });
-  const [loading, setLoading] = useState(true);
 
   const faixasPreco = [
     { id: "0-25", label: "Até R$ 25", min: 0, max: 25 },
@@ -87,23 +88,28 @@ export default function ProdutosPage() {
       setLoading(true);
       let query = supabase.from("prod").select("*");
 
-      if (filtros.categoria.length > 0) query = query.in("categorias", filtros.categoria);
-      if (filtros.tipo.length > 0) query = query.in("tipo_prod", filtros.tipo);
+      if (filtros.categoria.length > 0)
+        query = query.in("categorias", filtros.categoria);
+      if (filtros.tipo.length > 0)
+        query = query.in("tipo_prod", filtros.tipo);
 
       const { data, error } = await query;
       if (error) console.error("Erro produtos:", error);
 
       if (data) {
-        const filtrados = filtros.preco.length > 0
-          ? data.filter((p) =>
-            filtros.preco.some((fId) => {
-              const faixa = faixasPreco.find((f) => f.id === fId);
-              if (!faixa) return false;
-              if (faixa.max === null) return p.valor_venda >= faixa.min;
-              return p.valor_venda >= faixa.min && p.valor_venda <= faixa.max;
-            })
-          )
-          : data;
+        const filtrados =
+          filtros.preco.length > 0
+            ? data.filter((p) =>
+                filtros.preco.some((fId) => {
+                  const faixa = faixasPreco.find((f) => f.id === fId);
+                  if (!faixa) return false;
+                  if (faixa.max === null) return p.valor_venda >= faixa.min;
+                  return (
+                    p.valor_venda >= faixa.min && p.valor_venda <= faixa.max
+                  );
+                })
+              )
+            : data;
 
         const produtosComImgs = await Promise.all(
           filtrados.map(async (p) => {
@@ -124,7 +130,6 @@ export default function ProdutosPage() {
             }
 
             if (!resolved || resolved === "h") resolved = "/placeholder.png";
-
             return { ...p, imagenResolved: resolved };
           })
         );
@@ -138,18 +143,23 @@ export default function ProdutosPage() {
     fetchProdutos();
   }, [filtros]);
 
+  // ------------------ COMPONENTE ------------------
   return (
     <>
       <Navbar />
       <div className="min-h-screen bg-[#ECFFEB] px-6 py-10">
         <div className="max-w-7xl mx-auto flex flex-col md:flex-row gap-10">
-          {/* Barra lateral */}
+          {/* ------------------ Barra lateral ------------------ */}
           <aside className="w-full md:w-1/4 bg-white rounded-3xl shadow-lg p-6 h-fit sticky top-10">
-            <h2 className="text-2xl font-bold mb-6 text-green-700">Filtrar Produtos</h2>
+            <h2 className="text-2xl font-bold mb-6 text-green-700">
+              Filtrar Produtos
+            </h2>
 
             <button
               className="text-sm text-red-500 mb-6 flex items-center gap-1 hover:underline transition"
-              onClick={() => setFiltros({ categoria: [], tipo: [], preco: [] })}
+              onClick={() =>
+                setFiltros({ categoria: [], tipo: [], preco: [] })
+              }
             >
               Limpar filtros 🗑️
             </button>
@@ -158,7 +168,9 @@ export default function ProdutosPage() {
             <div className="mb-6">
               <h3 className="font-semibold mb-2 text-gray-700">Categorias</h3>
               <div className="flex flex-wrap gap-2">
-                {categorias.length === 0 ? <p className="text-gray-400">Carregando categorias...</p> :
+                {categorias.length === 0 ? (
+                  <p className="text-gray-400">Carregando categorias...</p>
+                ) : (
                   categorias.map((cat) => {
                     const selected = filtros.categoria.includes(cat.id);
                     return (
@@ -170,12 +182,17 @@ export default function ProdutosPage() {
                             : [...filtros.categoria, cat.id];
                           setFiltros({ ...filtros, categoria: updated });
                         }}
-                        className={`px-3 py-1 rounded-full border transition font-medium ${selected ? "bg-green-700 text-white border-green-700" : "bg-white text-gray-700 border-gray-300 hover:bg-green-100"}`}
+                        className={`px-3 py-1 rounded-full border transition font-medium ${
+                          selected
+                            ? "bg-green-700 text-white border-green-700"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-green-100"
+                        }`}
                       >
                         {cat.nome_cat}
                       </button>
                     );
-                  })}
+                  })
+                )}
               </div>
             </div>
 
@@ -183,7 +200,9 @@ export default function ProdutosPage() {
             <div className="mb-6">
               <h3 className="font-semibold mb-2 text-gray-700">Tipos</h3>
               <div className="flex flex-wrap gap-2">
-                {tipos.length === 0 ? <p className="text-gray-400">Carregando tipos...</p> :
+                {tipos.length === 0 ? (
+                  <p className="text-gray-400">Carregando tipos...</p>
+                ) : (
                   tipos.map((tipo) => {
                     const selected = filtros.tipo.includes(tipo.id);
                     return (
@@ -195,12 +214,17 @@ export default function ProdutosPage() {
                             : [...filtros.tipo, tipo.id];
                           setFiltros({ ...filtros, tipo: updated });
                         }}
-                        className={`px-3 py-1 rounded-full border transition font-medium ${selected ? "bg-green-700 text-white border-green-700" : "bg-white text-gray-700 border-gray-300 hover:bg-green-100"}`}
+                        className={`px-3 py-1 rounded-full border transition font-medium ${
+                          selected
+                            ? "bg-green-700 text-white border-green-700"
+                            : "bg-white text-gray-700 border-gray-300 hover:bg-green-100"
+                        }`}
                       >
                         {tipo.nome_tipo}
                       </button>
                     );
-                  })}
+                  })
+                )}
               </div>
             </div>
 
@@ -219,7 +243,11 @@ export default function ProdutosPage() {
                           : [...filtros.preco, f.id];
                         setFiltros({ ...filtros, preco: updated });
                       }}
-                      className={`px-3 py-1 rounded-full border transition font-medium ${selected ? "bg-green-700 text-white border-green-700" : "bg-white text-gray-700 border-gray-300 hover:bg-green-100"}`}
+                      className={`px-3 py-1 rounded-full border transition font-medium ${
+                        selected
+                          ? "bg-green-700 text-white border-green-700"
+                          : "bg-white text-gray-700 border-gray-300 hover:bg-green-100"
+                      }`}
                     >
                       {f.label}
                     </button>
@@ -229,44 +257,64 @@ export default function ProdutosPage() {
             </div>
           </aside>
 
-          {/* Lista de produtos */}
+          {/* ------------------ Lista de produtos ------------------ */}
           <main className="flex-1">
             <h1 className="text-4xl font-bold mb-8 text-green-800">Produtos</h1>
-            {loading ? <p>Carregando produtos...</p> :
-              produtos.length > 0 ? (
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
-                  {produtos.map((produto, index) => (
-                    <motion.div
-                      key={produto.id}
-                      initial={{ opacity: 0, y: 30 }}
-                      animate={{ opacity: 1, y: 0 }}
-                      transition={{ delay: index * 0.1, duration: 0.4, type: "spring", stiffness: 100 }}
-                      className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition p-5 flex flex-col"
-                    >
-                      <Link href={`/produto/${produto.id_prod}`}>
-                        <div className="relative w-full h-40 mb-4 cursor-pointer">
+
+            {loading ? (
+              <p>Carregando produtos...</p>
+            ) : produtos.length > 0 ? (
+              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-8">
+                {produtos.map((produto, index) => (
+                  <motion.div
+                    key={produto.id}
+                    initial={{ opacity: 0, y: 30 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{
+                      delay: index * 0.1,
+                      duration: 0.4,
+                      type: "spring",
+                      stiffness: 100,
+                    }}
+                    className="bg-white rounded-3xl shadow-lg hover:shadow-2xl transform hover:-translate-y-2 transition p-5 flex flex-col"
+                  >
+                    <Link href={`/produto/${produto.id_prod}`}>
+                      <div className="relative w-full h-40 mb-4 cursor-pointer">
+                        {produto.imagenResolved && (
                           <Image
-                            src={produto.imagenResolved?.startsWith("http") ? produto.imagenResolved : "/placeholder.png"}
+                            src={
+                              typeof produto.imagenResolved === "string" &&
+                              produto.imagenResolved.startsWith("http")
+                                ? produto.imagenResolved
+                                : "/placeholder.png"
+                            }
                             alt={produto.nome || "Produto"}
                             fill
+                            sizes="100vw"
                             className="object-contain"
                           />
-                        </div>
-                      </Link>
+                        )}
+                      </div>
+                    </Link>
 
-                      <h2 className="text-sm font-medium text-gray-700 line-clamp-2 h-10">{produto.nome}</h2>
-                      <p className="text-lg font-bold text-green-700 mt-2">R$ {produto.valor_venda?.toFixed(2)}</p>
-                      <button
-                        onClick={() => handleAddToCart(produto)}
-                        className="mt-4 flex items-center justify-center bg-green-700 hover:bg-green-800 text-white rounded-full py-2 px-4 font-semibold transition-all transform hover:scale-105"
-                      >
-                        <Plus size={18} className="mr-2" /> Adicionar
-                      </button>
-                    </motion.div>
-                  ))}
-                </div>
-              ) : <p className="text-gray-600">Nenhum produto encontrado.</p>
-            }
+                    <h2 className="text-sm font-medium text-gray-700 line-clamp-2 h-10">
+                      {produto.nome}
+                    </h2>
+                    <p className="text-lg font-bold text-green-700 mt-2">
+                      R$ {produto.valor_venda?.toFixed(2)}
+                    </p>
+                    <button
+                      onClick={() => handleAddToCart(produto)}
+                      className="mt-4 flex items-center justify-center bg-green-700 hover:bg-green-800 text-white rounded-full py-2 px-4 font-semibold transition-all transform hover:scale-105"
+                    >
+                      <Plus size={18} className="mr-2" /> Adicionar
+                    </button>
+                  </motion.div>
+                ))}
+              </div>
+            ) : (
+              <p className="text-gray-600">Nenhum produto encontrado.</p>
+            )}
           </main>
         </div>
 

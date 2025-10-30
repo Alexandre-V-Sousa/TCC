@@ -160,14 +160,21 @@ export default function Usuario() {
             <input
               type="text"
               name={item.name}
-              value={formData[item.name] || ""}
+              value={formData[item.name] ?? ""}
               disabled={item.disabled}
-              onChange={handleChange}
-              className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 ${item.disabled ? "bg-gray-100" : ""}`}
+              onChange={(e) =>
+                setFormData((prev) => ({
+                  ...prev,
+                  [item.name]: e.target.value,
+                }))
+              }
+              className={`mt-1 block w-full rounded-md border border-gray-300 px-3 py-2 focus:outline-none focus:ring-2 focus:ring-green-400 ${item.disabled ? "bg-gray-100" : ""
+                }`}
             />
           </div>
         ))}
       </div>
+
       <button onClick={handleSalvar} className="mt-6 bg-green-700 text-white px-6 py-3 rounded-full font-bold hover:bg-green-800 transition-all shadow-lg">
         Salvar
       </button>
@@ -184,7 +191,7 @@ export default function Usuario() {
               <h3 className="font-semibold text-lg">Pedido #{p.id}</h3>
               <span className="text-gray-500">{new Date(p.created_at).toLocaleDateString()}</span>
             </div>
-            <p>Método: {String(p.method).replace("_falso","")}</p>
+            <p>Método: {String(p.method).replace("_falso", "")}</p>
             <p>Total: R$ {Number(p.amount).toFixed(2)}</p>
             {p.items && p.items.length > 0 && (
               <details className="mt-2">
@@ -217,40 +224,40 @@ export default function Usuario() {
 
   // ===== Render =====
   return (
-    
+
     <div className="min-h-screen bg-[#ECFFEB] flex text-black">
       {/* MENU LATERAL */}
-      <motion.aside initial={{x:-200,opacity:0}} animate={{x:0,opacity:1}} transition={{type:"spring",stiffness:100,damping:20}} className="w-64 bg-white shadow-lg p-6 flex flex-col gap-6">
+      <motion.aside initial={{ x: -200, opacity: 0 }} animate={{ x: 0, opacity: 1 }} transition={{ type: "spring", stiffness: 100, damping: 20 }} className="w-64 bg-white shadow-lg p-6 flex flex-col gap-6">
         <div className="flex flex-col items-center mb-6">
-          <div className="relative w-24 h-24 cursor-pointer" onClick={()=>setMostrarModalFotos(true)}>
-            <Image src={fotoPerfil} alt="Foto de Perfil" width={96} height={96} className="rounded-full object-cover border-2 border-green-700"/>
+          <div className="relative w-24 h-24 cursor-pointer" onClick={() => setMostrarModalFotos(true)}>
+            <Image src={fotoPerfil} alt="Foto de Perfil" width={96} height={96} className="rounded-full object-cover border-2 border-green-700" />
           </div>
           <Link href="/" className="mt-4 text-green-700 font-semibold hover:text-green-900 transition-colors">← Início</Link>
         </div>
         <nav className="flex flex-col gap-3 text-gray-700">
-          <button onClick={()=>setAba("dados")} className={`flex items-center gap-2 font-semibold hover:text-green-700 ${aba==="dados"?"text-green-700":""}`}><User/> Meus dados</button>
-          <button onClick={()=>setAba("pedidos")} className={`flex items-center gap-2 font-semibold hover:text-green-700 ${aba==="pedidos"?"text-green-700":""}`}><ShoppingCart/> Meus pedidos</button>
-          <button onClick={()=>setAba("alterar")} className={`flex items-center gap-2 font-semibold hover:text-green-700 ${aba==="alterar"?"text-green-700":""}`}><Shield/> Alterar senha</button>
-          <button onClick={handleLogout} className="flex items-center gap-2 hover:text-red-600 font-semibold mt-auto"><LogOut/> Sair da conta</button>
+          <button onClick={() => setAba("dados")} className={`flex items-center gap-2 font-semibold hover:text-green-700 ${aba === "dados" ? "text-green-700" : ""}`}><User /> Meus dados</button>
+          <button onClick={() => setAba("pedidos")} className={`flex items-center gap-2 font-semibold hover:text-green-700 ${aba === "pedidos" ? "text-green-700" : ""}`}><ShoppingCart /> Meus pedidos</button>
+          <button onClick={() => setAba("alterar")} className={`flex items-center gap-2 font-semibold hover:text-green-700 ${aba === "alterar" ? "text-green-700" : ""}`}><Shield /> Alterar senha</button>
+          <button onClick={handleLogout} className="flex items-center gap-2 hover:text-red-600 font-semibold mt-auto"><LogOut /> Sair da conta</button>
         </nav>
       </motion.aside>
 
       {/* CONTEÚDO PRINCIPAL */}
-      <motion.main initial={{opacity:0}} animate={{opacity:1}} transition={{duration:0.5}} className="flex-1 p-8">
-        {aba==="dados" && <AbaDados/>}
-        {aba==="pedidos" && <AbaPedidos/>}
-        {aba==="alterar" && <AbaAlterarSenha/>}
+      <motion.main initial={{ opacity: 0 }} animate={{ opacity: 1 }} transition={{ duration: 0.5 }} className="flex-1 p-8">
+        {aba === "dados" && <AbaDados />}
+        {aba === "pedidos" && <AbaPedidos />}
+        {aba === "alterar" && <AbaAlterarSenha />}
       </motion.main>
 
       {/* MODAL FOTOS */}
       <AnimatePresence>
         {mostrarModalFotos && (
-          <motion.div initial={{opacity:0}} animate={{opacity:1}} exit={{opacity:0}} className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
-            <motion.div initial={{scale:0.8}} animate={{scale:1}} exit={{scale:0.8}} className="bg-white p-6 rounded-xl flex gap-4 flex-wrap max-w-md shadow-xl">
-              {fotosPredefinidas.map((foto,i)=>(
-                <motion.div key={i} className="cursor-pointer rounded-full p-1" onClick={()=>selecionarFoto(foto)} whileHover={{scale:1.1}} transition={{type:"spring",stiffness:300}}>
-                  <div className={`rounded-full overflow-hidden border-4 ${fotoPerfil===foto?"border-green-500 animate-pulse":"border-transparent"}`}>
-                    <Image src={foto} alt={`Perfil ${i}`} width={64} height={64} className="rounded-full object-cover"/>
+          <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }} className="fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+            <motion.div initial={{ scale: 0.8 }} animate={{ scale: 1 }} exit={{ scale: 0.8 }} className="bg-white p-6 rounded-xl flex gap-4 flex-wrap max-w-md shadow-xl">
+              {fotosPredefinidas.map((foto, i) => (
+                <motion.div key={i} className="cursor-pointer rounded-full p-1" onClick={() => selecionarFoto(foto)} whileHover={{ scale: 1.1 }} transition={{ type: "spring", stiffness: 300 }}>
+                  <div className={`rounded-full overflow-hidden border-4 ${fotoPerfil === foto ? "border-green-500 animate-pulse" : "border-transparent"}`}>
+                    <Image src={foto} alt={`Perfil ${i}`} width={64} height={64} className="rounded-full object-cover" />
                   </div>
                 </motion.div>
               ))}

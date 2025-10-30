@@ -94,6 +94,8 @@ export default function FinalPag() {
     }
   };
 
+  // ======= MÉTODOS DE PAGAMENTO CORRIGIDOS =======
+
   const handlePayCard = async (e) => {
     e?.preventDefault();
     setLoading(true);
@@ -103,6 +105,7 @@ export default function FinalPag() {
       setLoading(false);
       return;
     }
+
     if (isMagicCard(cardData.number)) {
       const pedido = {
         id: "ORD-" + Math.random().toString(36).slice(2, 9).toUpperCase(),
@@ -113,12 +116,15 @@ export default function FinalPag() {
         user: usuario,
         created_at: new Date().toISOString(),
       };
+
       localStorage.setItem("ultimoPedidoFake", JSON.stringify(pedido));
+      localStorage.removeItem("cupom"); // remove cupom após compra
       clearCart && clearCart();
       setLoading(false);
       router.push("/sucesso");
       return;
     }
+
     setTimeout(() => {
       setError("Pagamento recusado. Use o cartão de teste fornecido.");
       setLoading(false);
@@ -133,6 +139,7 @@ export default function FinalPag() {
       `amount:${totalValue}`,
       `to:${usuario.email || usuario.nome || "cliente"}`,
     ].join("|");
+
     const dataUrl = await gerarQR(payload);
     const pedido = {
       id: "ORD-" + Math.random().toString(36).slice(2, 9).toUpperCase(),
@@ -144,7 +151,9 @@ export default function FinalPag() {
       pix_payload: payload,
       qrDataUrl: dataUrl,
     };
+
     localStorage.setItem("ultimoPedidoFake", JSON.stringify(pedido));
+    localStorage.removeItem("cupom"); // remove cupom após compra
     clearCart && clearCart();
     setLoading(false);
     router.push("/sucesso");
@@ -160,13 +169,18 @@ export default function FinalPag() {
       user: usuario,
       created_at: new Date().toISOString(),
     };
+
     localStorage.setItem("ultimoPedidoFake", JSON.stringify(pedido));
+    localStorage.removeItem("cupom"); // remove cupom após compra
     clearCart && clearCart();
+
     setTimeout(() => {
       setLoading(false);
       router.push("/sucesso");
     }, 500);
   };
+
+  // ======= RENDER =======
 
   return (
     <>
@@ -283,20 +297,20 @@ export default function FinalPag() {
                     className="w-1/2 p-2 border rounded text-black"
                   />
                 </div>
-                <button type="submit" disabled={loading} className="w-full bg-blue-700 text-white py-2 rounded mt-2">
-                  {loading ? "Processando..." : "Pagar com cartão"}
+                <button type="submit" disabled={loading} className="w-full bg-green-700 text-black py-2 rounded mt-2 hover:bg-green-800">
+                  {loading ? "Processando..." : "Pagar"}
                 </button>
               </form>
             )}
 
             {method === "pix" && (
-              <button onClick={handlePayPix} disabled={loading} className="w-full bg-green-600 text-white py-2 rounded mt-3">
+              <button onClick={handlePayPix} disabled={loading} className="w-full bg-green-700 text-black py-2 rounded mt-2 hover:bg-green-800">
                 {loading ? "Gerando QR..." : "Pagar com PIX"}
               </button>
             )}
 
             {method === "cash" && (
-              <button onClick={handlePayCash} disabled={loading} className="w-full bg-yellow-500 text-black py-2 rounded mt-3">
+              <button onClick={handlePayCash} disabled={loading} className="w-full bg-green-700 text-black py-2 rounded mt-2 hover:bg-green-800">
                 {loading ? "Finalizando..." : "Pagar em dinheiro"}
               </button>
             )}

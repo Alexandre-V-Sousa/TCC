@@ -1,5 +1,6 @@
 "use client";
-import { useRouter } from "next/router";
+
+import { useParams } from "next/navigation";
 import { useCart } from "../../context/CartContext";
 import { motion } from "framer-motion";
 import { Plus, Minus } from "lucide-react";
@@ -10,8 +11,8 @@ import { useState, useEffect } from "react";
 import { supabase } from "../../lib/supabaseClient";
 
 export default function ProdutoPage() {
-  const router = useRouter();
-  const { id } = router.query;
+  const params = useParams();
+  const id = params?.id;
 
   const { addToCart, setSidebarOpen } = useCart();
   const [produto, setProduto] = useState(null);
@@ -19,88 +20,66 @@ export default function ProdutoPage() {
   const [imagemAtiva, setImagemAtiva] = useState(0);
   const [quantidade, setQuantidade] = useState(1);
 
-  // Ajuste aqui caso seu bucket tenha outro nome (sem encoding)
   const SUPABASE_BASE = "https://kdqjnyhhxbafdhgwpzhq.supabase.co";
-  const DEFAULT_BUCKET = "imagem dos produtos"; // nome legível do bucket
-  // path encode (caso o bucket tenha espaço)
+  const DEFAULT_BUCKET = "imagem dos produtos";
   const DEFAULT_BUCKET_ENCODED = encodeURIComponent(DEFAULT_BUCKET);
+  const placeholder = "/placeholder.png";
 
-  const placeholder = "/placeholder.png"; // coloque um placeholder na pasta public
+  const corrigirImagem = (raw) => {
+    if (!raw || raw === "h") return placeholder;
 
-  // Função robusta para normalizar/validar o campo de imagem
-  const corrigirImagem = (raw, contexto = {}) => {
-    if (!raw && raw !== "") return placeholder;
+    let url = raw;
+    if (Array.isArray(raw)) url = raw[0];
+    if (typeof url === "object") return placeholder;
 
-    // se for array, pega primeiro item
-    if (Array.isArray(raw)) raw = raw[0];
-
-    // se for objeto, tenta extrair uma propriedade comum, senão fallback
-    if (typeof raw === "object") {
-      console.warn("Campo imagem é objeto inesperado", contexto);
-      return placeholder;
-    }
-
-    let url = String(raw).trim();
-
-    // se for lista separada por vírgula -> pega o primeiro não-vazio
     if (url.includes(",")) {
       const parts = url.split(",").map((s) => s.trim()).filter(Boolean);
       url = parts.length > 0 ? parts[0] : url;
     }
 
-    // valores óbvios inválidos
-    if (url.length < 5) {
-      console.warn("Imagem inválida (curta):", { valor: url, contexto });
-      return placeholder;
-    }
+    if (url.startsWith("http://") || url.startsWith("https://")) return url;
 
-    // já é url absoluta?
-    if (url.startsWith("http://") || url.startsWith("https://")) {
-      return url;
-    }
-
-    // se começa com "/storage" ou "storage/v1" ou contém "object/public", concatena base
-    if (url.startsWith("/storage") || url.startsWith("storage") || url.includes("/object/public/")) {
-      // remover barra duplicada
+    if (url.startsWith("/storage") || url.includes("/object/public/")) {
       const cleaned = url.startsWith("/") ? url : `/${url}`;
       return `${SUPABASE_BASE}${cleaned}`;
     }
 
-    // se for um caminho relativo do tipo "bucket/foto.jpg"
-    if (url.includes("/")) {
-      // pode já ter a pasta "public/..." ou "produto/..."
-      return `${SUPABASE_BASE}/storage/v1/object/public/${url}`;
-    }
+    if (url.includes("/")) return `${SUPABASE_BASE}/storage/v1/object/public/${url}`;
 
-    // provavelmente é só o nome do arquivo -> monta com bucket padrão
     return `${SUPABASE_BASE}/storage/v1/object/public/${DEFAULT_BUCKET_ENCODED}/${encodeURIComponent(url)}`;
   };
 
   useEffect(() => {
-    if (!router.isReady) return;
+    if (!id) return;
+
     const idNum = Number(id);
 
     const fetchProduto = async () => {
-      const { data, error } = await supabase
-        .from("prod")
-        .select("*")
-        .eq("id_prod", idNum)
-        .maybeSingle();
+      try {
+        const { data, error } = await supabase
+          .from("prod")
+          .select("*")
+          .eq("id_prod", idNum)
+          .maybeSingle();
 
-      if (error || !data) {
-        console.error("Erro ao buscar produto:", error);
-        setProduto(null);
-      } else {
-        // Normaliza imagem(s)
+        if (error || !data) {
+          setProduto(null);
+          return;
+        }
+
         let imagens = [];
         if (data.imagem) {
-          // tenta detectar múltiplas imagens em CSV
           if (typeof data.imagem === "string" && data.imagem.includes(",")) {
-            const parts = data.imagem.split(",").map((s) => s.trim()).filter(Boolean);
-            imagens = parts.map((p) => corrigirImagem(p, { id_prod: data.id_prod }));
+            imagens = data.imagem
+              .split(",")
+              .map((s) => s.trim())
+              .filter(Boolean)
+              .map(corrigirImagem);
           } else {
-            imagens = [corrigirImagem(data.imagem, { id_prod: data.id_prod })];
+            imagens = [corrigirImagem(data.imagem)];
           }
+        } else if (data.imagens && Array.isArray(data.imagens)) {
+          imagens = data.imagens.map(corrigirImagem);
         } else {
           imagens = [placeholder];
         }
@@ -109,52 +88,70 @@ export default function ProdutoPage() {
           ...data,
           preco: data.valor_venda || 0,
           imagens,
-          categoria: data.categoria || "Sem categoria",
+          categoria: data.categoria || data.categorias || "Sem categoria",
         });
+      } catch (err) {
+        console.error(err);
+        setProduto(null);
       }
     };
 
     const fetchRelacionados = async () => {
-      const { data, error } = await supabase
-        .from("prod")
-        .select("*")
-        .neq("id_prod", idNum)
-        .limit(10);
+      try {
+        const { data, error } = await supabase
+          .from("prod")
+          .select("*")
+          .neq("id_prod", idNum)
+          .limit(10);
 
-      if (!error && data) {
-        const list = data.map((p) => {
-          let imgs = [];
-          if (p.imagem) {
-            if (typeof p.imagem === "string" && p.imagem.includes(",")) {
-              imgs = p.imagem.split(",").map((s) => s.trim()).filter(Boolean).map((it) => corrigirImagem(it, { id_prod: p.id_prod }));
+        if (!error && data) {
+          const list = data.map((p) => {
+            let imgs = [];
+            if (p.imagem) {
+              if (typeof p.imagem === "string" && p.imagem.includes(",")) {
+                imgs = p.imagem
+                  .split(",")
+                  .map((s) => s.trim())
+                  .filter(Boolean)
+                  .map(corrigirImagem);
+              } else {
+                imgs = [corrigirImagem(p.imagem)];
+              }
+            } else if (p.imagens && Array.isArray(p.imagens)) {
+              imgs = p.imagens.map(corrigirImagem);
             } else {
-              imgs = [corrigirImagem(p.imagem, { id_prod: p.id_prod })];
+              imgs = [placeholder];
             }
-          } else {
-            imgs = [placeholder];
-          }
 
-          return {
-            ...p,
-            preco: p.valor_venda || 0,
-            imagens: imgs,
-            categoria: p.categoria || "Sem categoria",
-          };
-        });
-        setRelacionados(list);
-      } else if (error) {
-        console.error("Erro ao buscar relacionados:", error);
+            return {
+              ...p,
+              preco: p.valor_venda || 0,
+              imagens: imgs,
+              categoria: p.categoria || p.categorias || "Sem categoria",
+            };
+          });
+          setRelacionados(list);
+        }
+      } catch (err) {
+        console.error(err);
       }
     };
 
     fetchProduto();
     fetchRelacionados();
-  }, [id, router.isReady]);
+  }, [id]);
 
   if (!produto) return <p className="p-10">Carregando produto...</p>;
 
   const handleAddToCart = () => {
-    addToCart({ ...produto, quantity: quantidade });
+    const produtoParaCarrinho = {
+      ...produto,
+      // ⚡ CORREÇÃO: barra lateral espera `imagem` (singular)
+      imagem: produto.imagens && produto.imagens.length > 0 ? produto.imagens : [placeholder],
+      preco: produto.preco ?? produto.valor_venda ?? 0,
+      quantity: quantidade,
+    };
+    addToCart(produtoParaCarrinho);
     setSidebarOpen(true);
   };
 
@@ -163,7 +160,7 @@ export default function ProdutoPage() {
       <Navbar />
       <main className="bg-[#ECFFEB] min-h-screen px-6 py-14 text-black">
         <div className="max-w-7xl mx-auto grid grid-cols-1 lg:grid-cols-12 gap-16">
-          {/* Galeria de imagens */}
+          {/* Galeria */}
           <div className="lg:col-span-5 space-y-6">
             {produto.imagens.length > 0 && (
               <motion.div
@@ -174,14 +171,13 @@ export default function ProdutoPage() {
                 className="relative w-full h-96 bg-white rounded-3xl shadow-lg overflow-hidden"
               >
                 <Image
-                  src={produto.imagens[imagemAtiva]}
-                  alt={produto.nome}
+                  src={produto.imagens[imagemAtiva] || placeholder}
+                  alt={produto.nome || "Produto"}
                   fill
                   style={{ objectFit: "contain" }}
                 />
               </motion.div>
             )}
-
             <div className="flex gap-4 overflow-x-auto pb-2">
               {produto.imagens.map((img, i) => (
                 <motion.div
@@ -193,7 +189,7 @@ export default function ProdutoPage() {
                   }`}
                 >
                   <Image
-                    src={img}
+                    src={img || placeholder}
                     alt={`${produto.nome} ${i}`}
                     width={100}
                     height={100}
@@ -204,7 +200,7 @@ export default function ProdutoPage() {
             </div>
           </div>
 
-          {/* Informações principais */}
+          {/* Info */}
           <div className="lg:col-span-7 flex flex-col">
             <motion.h1
               initial={{ opacity: 0, y: 20 }}
@@ -221,10 +217,9 @@ export default function ProdutoPage() {
               transition={{ duration: 0.5 }}
               className="bg-green-100 text-green-800 font-bold text-3xl px-6 py-4 rounded-2xl shadow-md inline-block mb-6"
             >
-              R$ {produto.preco.toFixed(2)}
+              R$ {(produto.preco ?? produto.valor_venda ?? 0).toFixed(2)}
             </motion.div>
 
-            {/* Seletor de quantidade */}
             <div className="flex items-center gap-4 mb-6">
               <button
                 onClick={() => setQuantidade((q) => Math.max(1, q - 1))}
@@ -250,28 +245,21 @@ export default function ProdutoPage() {
               <Plus size={22} className="mr-2" /> Adicionar ao Carrinho
             </motion.button>
 
-            {/* Descrição */}
             <motion.div
               initial={{ opacity: 0, y: 30 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.2, duration: 0.5 }}
               className="mt-12 bg-white rounded-2xl shadow-lg p-8"
             >
-              <h2 className="text-xl font-semibold mb-4 text-green-700">
-                Descrição
-              </h2>
-              <p className="text-gray-700 leading-relaxed">
-                {produto.descricao}
-              </p>
+              <h2 className="text-xl font-semibold mb-4 text-green-700">Descrição</h2>
+              <p className="text-gray-700 leading-relaxed">{produto.descricao}</p>
             </motion.div>
           </div>
         </div>
 
-        {/* Produtos relacionados */}
+        {/* Relacionados */}
         <section className="max-w-7xl mx-auto mt-20">
-          <h2 className="text-2xl font-bold text-green-800 mb-6">
-            Produtos relacionados
-          </h2>
+          <h2 className="text-2xl font-bold text-green-800 mb-6">Produtos relacionados</h2>
           <div className="relative">
             <div className="flex gap-6 overflow-x-auto pb-4 scroll-smooth snap-x snap-mandatory">
               {relacionados.map((rel) => (
@@ -279,28 +267,25 @@ export default function ProdutoPage() {
                   key={rel.id_prod}
                   whileHover={{ scale: 1.05 }}
                   className="snap-start bg-white rounded-2xl shadow-lg p-4 min-w-[220px] cursor-pointer"
-                  onClick={() => router.push(`/produto/${rel.id_prod}`)}
+                  onClick={() => window.location.href = `/produto/${rel.id_prod}`}
                 >
                   {rel.imagens.length > 0 && (
                     <Image
-                      src={rel.imagens[0]}
+                      src={rel.imagens[0] || placeholder}
                       alt={rel.nome}
                       width={160}
                       height={160}
                       className="rounded-lg object-contain mx-auto"
                     />
                   )}
-                  <p className="mt-3 text-sm font-medium text-gray-700 text-center">
-                    {rel.nome}
-                  </p>
-                  <p className="text-green-700 font-bold text-center">
-                    R$ {rel.preco.toFixed(2)}
-                  </p>
+                  <p className="mt-3 text-sm font-medium text-gray-700 text-center">{rel.nome}</p>
+                  <p className="text-green-700 font-bold text-center">R$ {(rel.preco ?? rel.valor_venda ?? 0).toFixed(2)}</p>
                 </motion.div>
               ))}
             </div>
           </div>
         </section>
+
         <Rodape />
       </main>
     </>

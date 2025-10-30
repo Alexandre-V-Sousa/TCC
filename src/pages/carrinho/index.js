@@ -17,7 +17,7 @@ export default function CarrinhoPage() {
 
   // Cupom
   const [cupomInput, setCupomInput] = useState("");
-  const [cupomAplicado, setCupomAplicado] = useState("");
+  const [cupomAplicado, setCupomAplicado] = useState(localStorage.getItem("cupom") || "");
   const [mensagemCupom, setMensagemCupom] = useState("");
 
   const format = (v) =>
@@ -31,10 +31,9 @@ export default function CarrinhoPage() {
       return;
     }
     const n = Number(cep.replace(/\D/g, "").slice(0, 2));
-    setFrete(n % 2 === 0 ? 0 : 12.5);
-
-    // salvar frete no localStorage para usar na página de pagamento
-    localStorage.setItem("frete", n % 2 === 0 ? 0 : 12.5);
+    const valorFrete = n % 2 === 0 ? 0 : 12.5;
+    setFrete(valorFrete);
+    localStorage.setItem("frete", valorFrete);
   };
 
   // Aplicar cupom
@@ -47,16 +46,14 @@ export default function CarrinhoPage() {
       setMensagemCupom("Cupom inválido!");
     }
 
-    // Limpar mensagem e cupom após 3 segundos
+    // Limpar apenas a mensagem, sem remover o cupom
     setTimeout(() => {
       setMensagemCupom("");
-      setCupomAplicado("");
       setCupomInput("");
-      localStorage.removeItem("cupom");
     }, 3000);
   };
 
-  // Calcular total considerando cupom e frete
+  // Calcular total
   const total = (() => {
     let base = subtotal;
     if (cupomAplicado === "PATINHAOFF") base = 0;
@@ -258,7 +255,7 @@ export default function CarrinhoPage() {
               </div>
             </div>
 
-            {/* Recomendações dinâmicas */}
+            {/* Recomendações */}
             <div className="bg-white p-6 rounded-2xl shadow-md">
               <h3 className="font-semibold mb-4">Recomendações</h3>
               {loading ? (
